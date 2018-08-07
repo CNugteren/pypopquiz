@@ -1,0 +1,15 @@
+dist: trusty
+language: python
+cache: pip
+python:
+  - "3.5"
+  - "3.6"
+
+install:
+  - pip install mypy pylint
+
+script:
+  - pip install -e .
+  - pylint pypopquiz test
+  - mypy pypopquiz --ignore-missing-imports
+  - python -m unittest discover test

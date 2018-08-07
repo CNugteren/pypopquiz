@@ -1,7 +1,7 @@
 PyPopQuiz: A Python/ffmpeg-based popquiz creator
 ================
 
-PyPopQuiz is still under development, head back soon if you are looking for a fully working tool. If you are a developer, you can already start testing the tool. You can install it using `python setup.py develop` and then run the tool, e.g.:
+PyPopQuiz is still under development, head back soon if you are looking for a fully working tool. If you are a developer, you can already start testing the tool. You can install it using `pip install -e .` and then run the tool, e.g.:
 
     popquiz.py -i samples/round01.json -o output_folder
 
