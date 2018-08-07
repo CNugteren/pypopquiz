@@ -1,14 +1,15 @@
 """Module with all video/ffmpeg related functions"""
 
 from pathlib import Path
-from typing import Dict, Tuple, List
+from typing import Dict, Tuple, List, Any
 
 import ffmpeg
 
 import pypopquiz as ppq
 import pypopquiz.io
 
-Stream = ffmpeg.nodes.FilterableStream
+Stream = Any  # Should actually be "ffmpeg.nodes.FilterableStream" but doesn't work
+OutStream = Any  # ffmpeg.nodes.OutputNode
 
 
 def get_interval_in_s(interval: List[str]) -> List[int]:
@@ -83,7 +84,7 @@ def filter_stream(stream: Stream, kind: str, round_id: int, question: Dict, ques
     return stream_v, stream_a
 
 
-def run_ffmpeg(output_stream: ffmpeg.nodes.OutputNode, display_graph: bool = False) -> None:
+def run_ffmpeg(output_stream: OutStream, display_graph: bool = False) -> None:
     """Runs the ffmpeg command to create the video, applying all the filters"""
     if display_graph:
         output_stream.view(filename="ffmpeg_graph")  # optional visualisation of the graph

@@ -1,6 +1,8 @@
 PyPopQuiz: A Python/ffmpeg-based popquiz creator
 ================
 
+[![Build Status](https://travis-ci.org/CNugteren/pypopquiz.svg?branch=master)](https://travis-ci.org/CNugteren/pypopquiz/branches)
+
 PyPopQuiz is still under development, head back soon if you are looking for a fully working tool. If you are a developer, you can already start testing the tool. You can install it using `pip install -e .` and then run the tool, e.g.:
 
     popquiz.py -i samples/round01.json -o output_folder
@@ -9,7 +11,7 @@ PyPopQuiz is still under development, head back soon if you are looking for a fu
 Requirements
 -------------
 
-Testing on Linux (Debian 9). Requires Python 3.5, ffmpeg and the Python packages `ffmpeg-python` and `pytube`.
+Tested on Linux. Requires Python 3.5 or newer. Requires ffmpeg and the Python packages `ffmpeg-python` and `pytube`, installed as part of the requirements.
 
 
 Tests
