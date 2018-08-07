@@ -8,8 +8,9 @@ import ffmpeg
 import pypopquiz as ppq
 import pypopquiz.io
 
-Stream = Any  # Should actually be "ffmpeg.nodes.FilterableStream" but doesn't work
-OutStream = Any  # ffmpeg.nodes.OutputNode
+# Should actually be "ffmpeg.nodes.FilterableStream" and "ffmpeg.nodes.OutputNode" but doesn't work
+Stream = Any  # pylint: disable=invalid-name
+OutStream = Any  # pylint: disable=invalid-name
 
 
 def get_interval_in_s(interval: List[str]) -> List[int]:
