@@ -2,6 +2,7 @@
 
 from pathlib import Path
 from typing import Dict, Tuple, List, Any
+import subprocess
 
 import ffmpeg
 
@@ -38,8 +39,10 @@ def draw_text_in_box(stream_v: Stream, video_text: str, length: int, width: int,
                      box_height: int, move: bool, top: bool) -> Stream:
     """Draws a semi-transparent box either at the top or bottom and writes text in it, optionally scrolling by"""
     y_location = 0 if top else height - box_height
+
+    thickness = 'fill' if ffmpeg_version().startswith('N') else 'max'  # Assume nightlies are new.
     stream_v = stream_v.drawbox(x=0, y=y_location, width=width, height=box_height,
-                                color="gray@0.5", thickness="max")  # 'max' == 'fill' in newer versions of ffmpeg
+                                color="gray@0.5", thickness=thickness)  # 'max' == 'fill' in newer versions of ffmpeg
     x_location_text = "{:d} * t / {:d}".format(width, length) if move else "{:d} - text_w / 2".format(width // 2)
     y_location_text = int(box_height * 1/4) if top else int(height - box_height * 3/4)
     stream_v = stream_v.drawtext(text=video_text, fontcolor="white", fontsize=50,
@@ -116,3 +119,31 @@ def create_video(kind: str, round_id: int, question: Dict, question_id: int, out
     run_ffmpeg(output)
 
     return file_name
+
+
+def ffmpeg_version() -> str:
+    """Determine the ffmpeg version.
+
+    Parses a line that looks like:
+    "ffmpeg version N-91586-g90dc584d21 Copyright (c) 2000-2018 the FFmpeg developers"
+    """
+    res = None
+    try:
+        res = subprocess.run(['ffmpeg', '-version'], check=True, capture_output=True)  # type: ignore
+        # Need ignore, capture_output argument is not known to linter
+    except subprocess.CalledProcessError:
+        pass
+
+    if res is None:
+        raise RuntimeError("ffmpeg is probably not in the path.")
+
+    version_str = res.stdout.decode('ascii').splitlines()[0]
+    prefix = 'ffmpeg version '
+    if not version_str.startswith(prefix):
+        raise RuntimeError("Cannot parse ffmpeg version string.")
+
+    # From here on, version string is assumed to be formatted as expected
+    version_str = version_str[len(prefix):]
+    version_chopped = version_str.split(' Copyright')[0]
+
+    return version_chopped
