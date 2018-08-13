@@ -33,7 +33,10 @@ Feature list / roadmap
 | Download YouTube sources | ✔ |
 | Create question video | in progress |
 | Create answers video | in progress |
-| Support audio/video only rounds |  |
+| Support audio only rounds |  |
+| Support video only rounds |  |
 | Support text-only rounds |  |
 | Support reversed video |  |
 | Support audio and video from different sources |  |
+| Support 8-bit audio rounds |  |
+| Support missing-word/beep rounds |  |
