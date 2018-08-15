@@ -11,10 +11,9 @@ import pypopquiz as ppq
 class Moviepy(ppq.backends.backend.Backend):
     """Moviepy backend."""
 
-    def __init__(self, source_file: Path, display_graph: bool = False) -> None:
+    def __init__(self, source_file: Path) -> None:
         super().__init__()
         self.video = moviepy.editor.VideoFileClip(str(source_file))
-
 
     def trim(self, start_s: int, end_s: int) -> None:
         """Trims a video to a given start and end time measured in seconds"""
@@ -45,8 +44,6 @@ class Moviepy(ppq.backends.backend.Backend):
             size=(video_w + txt.w, box_height),  # automatic height: txt.h + 10
             color=(0, 0, 0), pos=(video_w / 20, 'center'), col_opacity=0.6
         )
-
-        # y_location = 5*h/6
 
         if move:
             txt_mov = txt_col.set_pos(lambda t: (max(0, int(video_w - 0.5 * video_w * t)), y_location))
