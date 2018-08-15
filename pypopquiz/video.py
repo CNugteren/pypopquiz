@@ -7,8 +7,9 @@ import pypopquiz as ppq
 import pypopquiz.io
 import pypopquiz.backends.backend
 import pypopquiz.backends.ffmpeg
+import pypopquiz.backends.moviepy
 
-VideoBackend = ppq.backends.ffmpeg.FFMpeg  # select the backend to use
+VideoBackend = ppq.backends.backend.Backend
 
 
 def get_interval_in_s(interval: List[str]) -> List[int]:
@@ -47,7 +48,7 @@ def filter_stream(stream: VideoBackend, kind: str, round_id: int, question: Dict
 
 
 def create_video(kind: str, round_id: int, question: Dict, question_id: int, output_dir: Path,
-                 width: int = 1280, height: int = 720) -> Path:
+                 width: int = 1280, height: int = 720, backend: str = 'ffmpeg') -> Path:
     """Creates a video for one question, either a question or an answer video"""
     assert kind in ["question", "answer"]
 
@@ -64,8 +65,14 @@ def create_video(kind: str, round_id: int, question: Dict, question_id: int, out
     if file_name.exists():
         file_name.unlink()  # deletes a previous version
 
-    stream = VideoBackend(video_file)  # currently hard-coded since FFMpeg is the only back-end
+    if backend == 'ffmpeg':
+        be = ppq.backends.ffmpeg.FFMpeg
+    else:
+        be = ppq.backends.moviepy.Moviepy
+
+    stream = be(video_file)
     stream = filter_stream(stream, kind, round_id, question, question_id, width, height)
+
     stream.run(file_name)
 
     return file_name
