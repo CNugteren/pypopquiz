@@ -1,16 +1,11 @@
 """I/O utilities, including disk and Youtube I/O"""
 
 import json
+import jsonschema
 from pathlib import Path
 from typing import Dict
 
 from pytube import YouTube
-
-
-ROOT_KEYS = ["round", "theme", "questions"]
-QUESTION_KEYS = ["artist", "title", "video", "question", "answer"]
-VIDEO_KEYS = ["source", "url", "format"]
-Q_AND_A_KEYS = ["interval", "video", "audio"]
 
 
 def log(message: str) -> None:
@@ -21,22 +16,68 @@ def log(message: str) -> None:
 def verify_input(input_data: Dict) -> None:
     """Verifies that the input JSON is valid. If not, raises an error indicating the mistake"""
 
-    for root_key in ROOT_KEYS:
-        if root_key not in input_data.keys():
-            raise KeyError("Missing key '{:s}' from input JSON".format(root_key))
-
-    for index, question in enumerate(input_data["questions"]):
-        for q_key in QUESTION_KEYS:
-            if q_key not in question.keys():
-                raise KeyError("Missing key '{:s}' from question's {:d} input JSON".format(q_key, index))
-        for v_key in VIDEO_KEYS:
-            if v_key not in question["video"].keys():
-                raise KeyError("Missing key '{:s}' from question's {:d} video input JSON".format(v_key, index))
-        for q_and_a in ["question", "answer"]:
-            for key in Q_AND_A_KEYS:
-                if key not in question[q_and_a].keys():
-                    raise KeyError("Missing key '{:s}' from question {:d}'s {:s} section JSON".format(key, index,
-                                                                                                      q_and_a))
+    schema = {
+        "$schema": "http://json-schema.org/draft-04/schema#",
+        "type": "object",
+        "required": ["round", "theme", "questions"],
+        "additionalProperties": False,
+        "properties": {
+            "round": {"type": "number"},
+            "theme": {"type": "string"},
+            "questions": {
+                "type": "array",
+                "minItems": 1,
+                "additionalProperties": False,
+                "items": {
+                    "type": "object",
+                    "required": ["artist", "title", "sources", "question", "answer"],
+                    "properties": {
+                        "artist": {"type": "string"},
+                        "title": {"type": "string"},
+                        "sources": {
+                            "type": "array",
+                            "minItems": 1,
+                            "additionalProperties": False,
+                            "items": {
+                                "type": "object",
+                                "required": ["source", "url", "format"],
+                                "properties": {
+                                    "source": {"type": "string"},
+                                    "url": {"type": "string"},
+                                    "format": {"type": "string"},
+                                }
+                            }
+                        },
+                        "question": {
+                            "type": "object",
+                            "required": ["source", "interval", "audio", "video"],
+                            "additionalProperties": True,
+                            "properties": {
+                                "source": {"type": "number"},
+                                "interval": {"type": "array"},
+                                "audio": {"type": "boolean"},
+                                "video": {"type": "boolean"},
+                                "repetitions": {"type": "number"},
+                            }
+                        },
+                        "answer": {
+                            "type": "object",
+                            "required": ["source", "interval", "audio", "video"],
+                            "additionalProperties": True,
+                            "properties": {
+                                "source": {"type": "number"},
+                                "interval": {"type": "array"},
+                                "audio": {"type": "boolean"},
+                                "video": {"type": "boolean"},
+                                "repetitions": {"type": "number"},
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    jsonschema.validate(input_data, schema)
 
 
 def read_input(file_name: Path) -> Dict:
