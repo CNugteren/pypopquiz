@@ -84,3 +84,18 @@ def create_video(kind: str, round_id: int, question: Dict, question_id: int, out
     stream_f.run(file_name)
 
     return file_name
+
+
+def combine_videos(video_files: List[Path], kind: str, round_id: int, output_dir: Path,
+                   backend: str = 'ffmpeg') -> None:
+    """Combines a list of video files together into a single video"""
+    backend_cls = get_backend(backend)
+
+    assert video_files  # assumes at least one item
+    stream = backend_cls(video_files[0])
+    for video_file in video_files[1:]:
+        new_stream = backend_cls(video_file)
+        stream.combine(new_stream)
+
+    file_name = output_dir / ("{:02d}_{:s}{:s}".format(round_id, kind, video_files[0].suffix))
+    stream.run(file_name)

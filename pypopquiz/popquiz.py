@@ -42,6 +42,9 @@ def popquiz(input_file: Path, output_dir: Path, backend: str) -> None:
         q_videos.append(q_video)
         a_videos.append(a_video)
 
+    ppq.video.combine_videos(q_videos, "question", round_id, output_dir, backend=backend)
+    ppq.video.combine_videos(a_videos, "answer", round_id, output_dir, backend=backend)
+
 
 if __name__ == "__main__":
     popquiz(**parse_arguments())
