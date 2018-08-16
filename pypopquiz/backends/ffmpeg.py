@@ -13,7 +13,7 @@ import pypopquiz.io
 class FFMpeg(ppq.backends.backend.Backend):
     """FFMPEG backend, implements interface from base-class"""
 
-    def __init__(self, source_file: Path, display_graph: bool = False) -> None:
+    def __init__(self, source_file: Path, display_graph: bool = False, width: int = 1280, height: int = 720) -> None:
         super().__init__()
         stream = ffmpeg.input(str(source_file))
         self.display_graph = display_graph

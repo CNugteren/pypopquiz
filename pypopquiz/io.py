@@ -3,6 +3,7 @@
 import json
 from pathlib import Path
 from typing import Dict
+import shutil
 
 import jsonschema
 from pytube import YouTube
@@ -93,7 +94,7 @@ def get_video_file_name(video_data: Dict[str, str]) -> Path:
     return Path(video_data["url"] + "." + video_data["format"])
 
 
-def get_video(video_data: Dict[str, str], output_dir: Path) -> None:
+def get_video(video_data: Dict[str, str], output_dir: Path, input_dir: Path) -> None:
     """Downloads a video to a local output directory, skips if already there"""
 
     if not output_dir.exists():
@@ -112,6 +113,7 @@ def get_video(video_data: Dict[str, str], output_dir: Path) -> None:
         video = YouTube("https://www.youtube.com/watch?v={:s}".format(video_id))
         video = video.streams.filter(subtype=video_data["format"]).first()
         video.download(output_path=str(output_dir), filename=video_id)
-
+    elif video_source == "local":
+        shutil.copyfile(input_dir / get_video_file_name(video_data), output_file)
     else:
         raise KeyError("Unsupported source(s) '{:s}'".format(video_source))

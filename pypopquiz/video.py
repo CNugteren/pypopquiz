@@ -70,7 +70,7 @@ def create_video(kind: str, round_id: int, question: Dict, question_id: int, out
     else:
         be = ppq.backends.moviepy.Moviepy
 
-    stream = be(video_file)
+    stream = be(video_file, width, height)
     stream_f = filter_stream(stream, kind, round_id, question, question_id, width, height)
     stream_f.run(file_name)
 

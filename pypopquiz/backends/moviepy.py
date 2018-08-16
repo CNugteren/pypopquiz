@@ -11,9 +11,18 @@ import pypopquiz as ppq
 class Moviepy(ppq.backends.backend.Backend):
     """Moviepy backend."""
 
-    def __init__(self, source_file: Path) -> None:
+    def __init__(self, source_file: Path, width: int = 1280, height: int = 720) -> None:
         super().__init__()
-        self.video = moviepy.editor.VideoFileClip(str(source_file))
+        if source_file.suffix in ('.mp3', '.wav', ):
+            # Create a black clip with the audio file pasted on top
+            audio = moviepy.editor.AudioFileClip(str(source_file))
+            color = moviepy.editor.ColorClip(size=(width, height), color=(0, 0, 0), duration=audio.duration)
+            self.video = color.set_audio(audio)
+            # Need to select something as the fps (colorclip has no inherent framerate)
+            self.video = self.video.set_fps(24)
+        else:
+            # Assume video otherwise
+            self.video = moviepy.editor.VideoFileClip(str(source_file))
 
     def trim(self, start_s: int, end_s: int) -> None:
         """Trims a video to a given start and end time measured in seconds"""
@@ -57,4 +66,4 @@ class Moviepy(ppq.backends.backend.Backend):
 
     def run(self, file_name: Path) -> None:
         """Runs the backend to create the video, applying all the filters"""
-        self.video.write_videofile(str(file_name))
+        self.video.write_videofile(str(file_name.with_suffix('.mp4')))
