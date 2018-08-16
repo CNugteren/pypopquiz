@@ -3,7 +3,7 @@
 from pathlib import Path
 
 import moviepy.editor
-import moviepy.video.fx.all as vfx
+from moviepy.editor import vfx
 
 import pypopquiz as ppq
 

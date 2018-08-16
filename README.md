@@ -7,6 +7,7 @@ PyPopQuiz is still under development, head back soon if you are looking for a fu
 
     popquiz.py -i samples/round01.json -o output_folder
 
+To use the moviepy backend, add `-b moviepy` to the command line.
 
 Requirements
 -------------

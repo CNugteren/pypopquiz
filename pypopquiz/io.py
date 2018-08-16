@@ -1,10 +1,10 @@
 """I/O utilities, including disk and Youtube I/O"""
 
 import json
-import jsonschema
 from pathlib import Path
 from typing import Dict
 
+import jsonschema
 from pytube import YouTube
 
 
