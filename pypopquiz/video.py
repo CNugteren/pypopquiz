@@ -7,8 +7,10 @@ import pypopquiz as ppq
 import pypopquiz.io
 import pypopquiz.backends.backend
 import pypopquiz.backends.ffmpeg
+import pypopquiz.backends.moviepy
 
-VideoBackend = ppq.backends.ffmpeg.FFMpeg  # select the backend to use
+VideoBackend = pypopquiz.backends.backend.Backend
+
 
 
 def get_interval_in_s(interval: List[str]) -> List[int]:
@@ -17,7 +19,8 @@ def get_interval_in_s(interval: List[str]) -> List[int]:
 
 
 def filter_stream(stream: VideoBackend, kind: str, round_id: int, question: Dict, question_id: int,
-                  width: int, height: int, box_height: int = 100, fade_amount_s: int = 3) -> VideoBackend:
+                  box_height: int = 100, fade_amount_s: int = 3,
+                  add_spacer: bool = False) -> VideoBackend:
     """Adds ffmpeg filters to the stream, producing a separate video and audio stream as a result"""
 
     repetitions = question[kind].get("repetitions", 1)
@@ -30,10 +33,10 @@ def filter_stream(stream: VideoBackend, kind: str, round_id: int, question: Dict
 
     stream.trim(start_s=interval[0], end_s=interval[1])
     stream.fade_in_and_out(fade_amount_s, length_s)
-    stream.scale_video(width, height)
-    stream.draw_text_in_box(question_text, length_s, width, height, box_height, move=True, top=False)
+    stream.scale_video()
+    stream.draw_text_in_box(question_text, length_s, box_height, move=True, top=False)
     if kind == "answer":
-        stream.draw_text_in_box(answer_text, length_s, width, height, box_height, move=False, top=True)
+        stream.draw_text_in_box(answer_text, length_s, box_height, move=False, top=True)
 
     if repetitions == 1:
         pass  # no-op
@@ -43,11 +46,14 @@ def filter_stream(stream: VideoBackend, kind: str, round_id: int, question: Dict
     else:
         raise RuntimeError("Repetition not 1 or multiple 2, got: {:d}".format(repetitions))
 
+    if add_spacer and kind == "question":
+        stream.add_spacer("Get Ready...", duration_s=2)
+
     return stream
 
 
 def create_video(kind: str, round_id: int, question: Dict, question_id: int, output_dir: Path,
-                 width: int = 1280, height: int = 720) -> Path:
+                 width: int = 1280, height: int = 720, backend: str = 'ffmpeg', add_spacer: bool = False) -> Path:
     """Creates a video for one question, either a question or an answer video"""
     assert kind in ["question", "answer"]
 
@@ -64,8 +70,15 @@ def create_video(kind: str, round_id: int, question: Dict, question_id: int, out
     if file_name.exists():
         file_name.unlink()  # deletes a previous version
 
-    stream = VideoBackend(video_file)  # currently hard-coded since FFMpeg is the only back-end
-    stream = filter_stream(stream, kind, round_id, question, question_id, width, height)
-    stream.run(file_name)
+    if backend == 'ffmpeg':
+        backend_cls = ppq.backends.ffmpeg.FFMpeg
+    elif backend == 'moviepy':
+        backend_cls = ppq.backends.moviepy.Moviepy  # type: ignore
+    else:
+        raise ValueError('Invalid backend {} selected.'.format(backend))
+
+    stream = backend_cls(video_file, width=width, height=height)
+    stream_f = filter_stream(stream, kind, round_id, question, question_id, add_spacer=add_spacer)
+    stream_f.run(file_name)
 
     return file_name

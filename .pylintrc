@@ -223,7 +223,7 @@ ignored-classes=optparse.Values,thread._local,_thread._local
 # (useful for modules/projects where namespaces are manipulated during runtime
 # and thus existing member attributes cannot be deduced by static analysis. It
 # supports qualified module names, as well as Unix pattern matching.
-ignored-modules=
+ignored-modules=moviepy.video.fx.all,moviepy.audio.fx.all
 
 # Show a hint with possible names when a member name was not found. The aspect
 # of finding the hint is based on edit distance.
@@ -272,8 +272,7 @@ redefining-builtins-modules=six.moves,past.builtins,future.builtins,builtins,io
 
 # List of note tags to take in consideration, separated by a comma.
 notes=FIXME,
-      XXX,
-      TODO
+      XXX
 
 
 [FORMAT]
