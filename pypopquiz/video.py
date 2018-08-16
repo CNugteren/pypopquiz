@@ -1,6 +1,7 @@
 """Module with all video related functions, using one of the video backends"""
 
 from pathlib import Path
+import typing
 from typing import Dict, List
 
 import pypopquiz as ppq
@@ -9,7 +10,8 @@ import pypopquiz.backends.backend
 import pypopquiz.backends.ffmpeg
 import pypopquiz.backends.moviepy
 
-VideoBackend = ppq.backends.backend.Backend
+VideoBackend = pypopquiz.backends.backend.Backend
+
 
 
 def get_interval_in_s(interval: List[str]) -> List[int]:
@@ -18,7 +20,8 @@ def get_interval_in_s(interval: List[str]) -> List[int]:
 
 
 def filter_stream(stream: VideoBackend, kind: str, round_id: int, question: Dict, question_id: int,
-                  width: int, height: int, box_height: int = 100, fade_amount_s: int = 3) -> VideoBackend:
+                  width: int, height: int, box_height: int = 100, fade_amount_s: int = 3,
+                  add_spacer: bool = False) -> VideoBackend:
     """Adds ffmpeg filters to the stream, producing a separate video and audio stream as a result"""
 
     repetitions = question[kind].get("repetitions", 1)
@@ -44,11 +47,14 @@ def filter_stream(stream: VideoBackend, kind: str, round_id: int, question: Dict
     else:
         raise RuntimeError("Repetition not 1 or multiple 2, got: {:d}".format(repetitions))
 
+    if add_spacer and kind == "question":
+        stream.add_spacer("Get Ready...", duration_s=2)
+
     return stream
 
 
 def create_video(kind: str, round_id: int, question: Dict, question_id: int, output_dir: Path,
-                 width: int = 1280, height: int = 720, backend: str = 'ffmpeg') -> Path:
+                 width: int = 1280, height: int = 720, backend: str = 'ffmpeg', add_spacer: bool = False) -> Path:
     """Creates a video for one question, either a question or an answer video"""
     assert kind in ["question", "answer"]
 
@@ -68,10 +74,10 @@ def create_video(kind: str, round_id: int, question: Dict, question_id: int, out
     if backend == 'ffmpeg':
         be = ppq.backends.ffmpeg.FFMpeg
     else:
-        be = ppq.backends.moviepy.Moviepy
+        be = ppq.backends.moviepy.Moviepy  # type: ignore
 
-    stream = be(video_file, width, height)
-    stream_f = filter_stream(stream, kind, round_id, question, question_id, width, height)
+    stream = be(video_file, width=width, height=height)
+    stream_f = filter_stream(stream, kind, round_id, question, question_id, width, height, add_spacer=add_spacer)
     stream_f.run(file_name)
 
     return file_name

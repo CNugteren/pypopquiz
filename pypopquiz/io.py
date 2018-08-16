@@ -25,13 +25,14 @@ def verify_input(input_data: Dict) -> None:
         "properties": {
             "round": {"type": "number"},
             "theme": {"type": "string"},
+            "spacers": {"type": "boolean"},
             "questions": {
                 "type": "array",
                 "minItems": 1,
                 "additionalProperties": False,
                 "items": {
                     "type": "object",
-                    "required": ["artist", "title", "sources", "question", "answer"],
+                    "required": ["artist", "title", "sources", "question"],
                     "properties": {
                         "artist": {"type": "string"},
                         "title": {"type": "string"},

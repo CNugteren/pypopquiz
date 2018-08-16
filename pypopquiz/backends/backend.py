@@ -37,3 +37,7 @@ class Backend(abc.ABC):
     def run(self, file_name: Path) -> None:
         """Runs the backend to create the video, applying all the filters"""
         pass
+
+    def add_spacer(self, text: str, duration_s: float) -> None:
+        """Add a text spacer to the start of the clip."""
+        pass

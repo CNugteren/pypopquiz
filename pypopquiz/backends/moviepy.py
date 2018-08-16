@@ -3,26 +3,41 @@
 from pathlib import Path
 
 import moviepy.editor
+from moviepy.editor import afx
 from moviepy.editor import vfx
 
 import pypopquiz as ppq
+import pypopquiz.backends.backend
 
 
-class Moviepy(ppq.backends.backend.Backend):
+class Moviepy(pypopquiz.backends.backend.Backend):
     """Moviepy backend."""
 
     def __init__(self, source_file: Path, width: int = 1280, height: int = 720) -> None:
         super().__init__()
+        self.width = width
+        self.height = height
         if source_file.suffix in ('.mp3', '.wav', ):
             # Create a black clip with the audio file pasted on top
             audio = moviepy.editor.AudioFileClip(str(source_file))
-            color = moviepy.editor.ColorClip(size=(width, height), color=(0, 0, 0), duration=audio.duration)
-            self.video = color.set_audio(audio)
+
+            # Keep a reference to the original object that read the file.
+            # moviepy leaks process references, and hence we need to close them
+            # explicitly at the end of the run() method.
+            self.reader_ref = audio
+
+            self.video = moviepy.editor.ColorClip(size=(width, height), color=(0, 0, 0), duration=audio.duration)
+            self.video = self.video.set_audio(audio)
             # Need to select something as the fps (colorclip has no inherent framerate)
             self.video = self.video.set_fps(24)
         else:
             # Assume video otherwise
             self.video = moviepy.editor.VideoFileClip(str(source_file))
+
+            # Keep a reference to the original object that read the file.
+            # moviepy leaks process references, and hence we need to close them
+            # explicitly at the end of the run() method.
+            self.reader_ref = self.video
 
     def trim(self, start_s: int, end_s: int) -> None:
         """Trims a video to a given start and end time measured in seconds"""
@@ -34,19 +49,34 @@ class Moviepy(ppq.backends.backend.Backend):
 
     def fade_in_and_out(self, duration_s: int, video_length_s: int) -> None:
         """Adds a fade-in and fade-out to/from black for the audio and video stream"""
-        self.video = self.video.fx(vfx.fadein, duration_s).fx(vfx.fadeout, duration_s)
+        self.video = self.video.fx(vfx.fadein, duration_s).\
+            fx(vfx.fadeout, duration_s).\
+            fx(afx.audio_fadein, duration_s).\
+            fx(afx.audio_fadeout, duration_s)
 
     def scale_video(self, width: int, height: int) -> None:
         """Scales the video and pads if necessary to the requested dimensions"""
         self.video = self.video.fx(vfx.resize, (width, height))  # TODO: padding with black
 
-    def draw_text_in_box(self, video_text: str, length: int, width: int, height: int,
-                         box_height: int, move: bool, top: bool) -> None:
+    def draw_text_in_box(
+            self, video_text: str, length: int, width: int, height: int, box_height: int, move: bool,
+            top: bool
+    ) -> None:
+        """Draws a semi-transparent box either at the top or bottom and writes text in it, optionally scrolling by"""
+        self.video = Moviepy.draw_text_in_box_on_video(
+            self.video, video_text, length, width, height, box_height, move, top
+        )
+
+    @staticmethod
+    def draw_text_in_box_on_video(
+            video: moviepy.editor.VideoFileClip, video_text: str, length: float, width: int,
+            height: int, box_height: int, move: bool, top: bool
+    ) -> moviepy.editor.CompositeVideoClip:
         """Draws a semi-transparent box either at the top or bottom and writes text in it, optionally scrolling by"""
         y_location = 0 if top else height - box_height
-        txt = moviepy.editor.TextClip(video_text, font='Amiri-regular', color='white', fontsize=30)
+        txt = moviepy.editor.TextClip(video_text, font='Arial', color='white', fontsize=30)
 
-        video_w, _ = self.video.size
+        video_w, _ = video.size
 
         # Paste the text on top of a colored bar
         txt_col = txt.on_color(
@@ -55,15 +85,28 @@ class Moviepy(ppq.backends.backend.Backend):
         )
 
         if move:
-            txt_mov = txt_col.set_pos(lambda t: (max(0, int(video_w - 0.5 * video_w * t)), y_location))
+            txt_mov = txt_col.set_position(lambda t: (max(0, int(video_w - video_w * t / float(length))), y_location))
         else:
             txt_mov = txt_col
 
-        duration = self.video.duration
-        self.video = moviepy.editor.CompositeVideoClip([self.video, txt_mov])
-        self.video.duration = duration
+        duration = video.duration
+        video = moviepy.editor.CompositeVideoClip([video, txt_mov])
+        video.duration = duration
+        return video
 
+    def add_spacer(self, text: str, duration_s: float) -> None:
+        """Add a text spacer to the start of the clip."""
+        # create a black screen, of duration_s seconds.
+        color = moviepy.editor.ColorClip(size=(self.width, self.height), color=(0, 0, 0), duration=duration_s)
+        spacer = Moviepy.draw_text_in_box_on_video(
+            color, text, duration_s, self.width, self.height, box_height=100, move=True, top=False
+        )
+        self.video = moviepy.editor.concatenate_videoclips([spacer, self.video])
 
     def run(self, file_name: Path) -> None:
         """Runs the backend to create the video, applying all the filters"""
+        # Force mp4 extension, even if the original file was audio-only.
         self.video.write_videofile(str(file_name.with_suffix('.mp4')))
+
+        # Close the file reader (typically terminates an ffmpeg process)
+        self.reader_ref.close()

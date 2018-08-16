@@ -23,6 +23,8 @@ def popquiz(input_file: Path, output_dir: Path, backend: str) -> None:
     input_data = ppq.io.read_input(input_file)
     ppq.io.log("Processing popquiz round {:d}".format(input_data["round"]))
 
+    add_spacer = input_data.get('spacers', False)
+
     for question in input_data["questions"]:
         for source in question["sources"]:
             ppq.io.get_video(source, output_dir, input_file.parent)
@@ -33,10 +35,10 @@ def popquiz(input_file: Path, output_dir: Path, backend: str) -> None:
         round_id = input_data["round"]
         ppq.io.log("Processing question {:d}: {:s} - {:s}".format(question_id, question["artist"], question["title"]))
         q_video = ppq.video.create_video(
-            "question", round_id, question, question_id, output_dir, backend=backend
+            "question", round_id, question, question_id, output_dir, backend=backend, add_spacer=add_spacer
         )
         a_video = ppq.video.create_video(
-            "answer", round_id, question, question_id, output_dir, backend=backend
+            "answer", round_id, question, question_id, output_dir, backend=backend, add_spacer=add_spacer
         )
         q_videos.append(q_video)
         a_videos.append(a_video)
