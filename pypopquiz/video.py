@@ -9,8 +9,7 @@ import pypopquiz.backends.backend
 import pypopquiz.backends.ffmpeg
 import pypopquiz.backends.moviepy
 
-VideoBackend = pypopquiz.backends.backend.Backend
-
+VideoBackend = ppq.backends.backend.Backend
 
 
 def get_interval_in_s(interval: List[str]) -> List[int]:
@@ -52,6 +51,15 @@ def filter_stream(stream: VideoBackend, kind: str, round_id: int, question: Dict
     return stream
 
 
+def get_backend(backend: str):
+    """Selects the backend based on a string name"""
+    if backend == 'ffmpeg':
+        return ppq.backends.ffmpeg.FFMpeg
+    elif backend == 'moviepy':
+        return ppq.backends.moviepy.Moviepy  # type: ignore
+    raise ValueError('Invalid backend {} selected.'.format(backend))
+
+
 def create_video(kind: str, round_id: int, question: Dict, question_id: int, output_dir: Path,
                  width: int = 1280, height: int = 720, backend: str = 'ffmpeg', add_spacer: bool = False) -> Path:
     """Creates a video for one question, either a question or an answer video"""
@@ -70,13 +78,7 @@ def create_video(kind: str, round_id: int, question: Dict, question_id: int, out
     if file_name.exists():
         file_name.unlink()  # deletes a previous version
 
-    if backend == 'ffmpeg':
-        backend_cls = ppq.backends.ffmpeg.FFMpeg
-    elif backend == 'moviepy':
-        backend_cls = ppq.backends.moviepy.Moviepy  # type: ignore
-    else:
-        raise ValueError('Invalid backend {} selected.'.format(backend))
-
+    backend_cls = get_backend(backend)
     stream = backend_cls(video_file, width=width, height=height)
     stream_f = filter_stream(stream, kind, round_id, question, question_id, add_spacer=add_spacer)
     stream_f.run(file_name)
