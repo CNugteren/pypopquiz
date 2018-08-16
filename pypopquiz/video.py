@@ -1,7 +1,6 @@
 """Module with all video related functions, using one of the video backends"""
 
 from pathlib import Path
-import typing
 from typing import Dict, List
 
 import pypopquiz as ppq
