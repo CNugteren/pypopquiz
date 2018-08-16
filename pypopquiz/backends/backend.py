@@ -21,6 +21,10 @@ class Backend(abc.ABC):
         """Concatenates a video and audio stream with itself to make a twice as long video"""
         pass
 
+    def combine(self, other: 'Backend') -> None:
+        """Combines this video stream with another stream"""
+        pass
+
     @abc.abstractmethod
     def fade_in_and_out(self, duration_s: int, video_length_s: int) -> None:
         """Adds a fade-in and fade-out to/from black for the audio and video stream"""
