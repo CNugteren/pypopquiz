@@ -7,6 +7,10 @@ from pathlib import Path
 class Backend(abc.ABC):
     """Abstract class to specify the backend interface"""
 
+    def __init__(self, width: int = 1280, height: int = 720) -> None:
+        self.width = width
+        self.height = height
+
     @abc.abstractmethod
     def trim(self, start_s: int, end_s: int) -> None:
         """Trims a video to a given start and end time measured in seconds"""
@@ -23,13 +27,12 @@ class Backend(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def scale_video(self, width: int, height: int) -> None:
+    def scale_video(self) -> None:
         """Scales the video and pads if necessary to the requested dimensions"""
         pass
 
     @abc.abstractmethod
-    def draw_text_in_box(self, video_text: str, length: int, width: int, height: int,
-                         box_height: int, move: bool, top: bool) -> None:
+    def draw_text_in_box(self, video_text: str, length: int, box_height: int, move: bool, top: bool) -> None:
         """Draws a semi-transparent box either at the top or bottom and writes text in it, optionally scrolling by"""
         pass
 

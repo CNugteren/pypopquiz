@@ -19,7 +19,7 @@ def get_interval_in_s(interval: List[str]) -> List[int]:
 
 
 def filter_stream(stream: VideoBackend, kind: str, round_id: int, question: Dict, question_id: int,
-                  width: int, height: int, box_height: int = 100, fade_amount_s: int = 3,
+                  box_height: int = 100, fade_amount_s: int = 3,
                   add_spacer: bool = False) -> VideoBackend:
     """Adds ffmpeg filters to the stream, producing a separate video and audio stream as a result"""
 
@@ -33,10 +33,10 @@ def filter_stream(stream: VideoBackend, kind: str, round_id: int, question: Dict
 
     stream.trim(start_s=interval[0], end_s=interval[1])
     stream.fade_in_and_out(fade_amount_s, length_s)
-    stream.scale_video(width, height)
-    stream.draw_text_in_box(question_text, length_s, width, height, box_height, move=True, top=False)
+    stream.scale_video()
+    stream.draw_text_in_box(question_text, length_s, box_height, move=True, top=False)
     if kind == "answer":
-        stream.draw_text_in_box(answer_text, length_s, width, height, box_height, move=False, top=True)
+        stream.draw_text_in_box(answer_text, length_s, box_height, move=False, top=True)
 
     if repetitions == 1:
         pass  # no-op
@@ -71,12 +71,14 @@ def create_video(kind: str, round_id: int, question: Dict, question_id: int, out
         file_name.unlink()  # deletes a previous version
 
     if backend == 'ffmpeg':
-        be = ppq.backends.ffmpeg.FFMpeg
+        backend_cls = ppq.backends.ffmpeg.FFMpeg
+    elif backend == 'moviepy':
+        backend_cls = ppq.backends.moviepy.Moviepy  # type: ignore
     else:
-        be = ppq.backends.moviepy.Moviepy  # type: ignore
+        raise ValueError('Invalid backend {} selected.'.format(backend))
 
-    stream = be(video_file, width=width, height=height)
-    stream_f = filter_stream(stream, kind, round_id, question, question_id, width, height, add_spacer=add_spacer)
+    stream = backend_cls(video_file, width=width, height=height)
+    stream_f = filter_stream(stream, kind, round_id, question, question_id, add_spacer=add_spacer)
     stream_f.run(file_name)
 
     return file_name

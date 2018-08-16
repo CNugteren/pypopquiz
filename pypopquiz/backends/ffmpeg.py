@@ -14,7 +14,7 @@ class FFMpeg(ppq.backends.backend.Backend):
     """FFMPEG backend, implements interface from base-class"""
 
     def __init__(self, source_file: Path, display_graph: bool = False, width: int = 1280, height: int = 720) -> None:
-        super().__init__()
+        super().__init__(width, height)
         stream = ffmpeg.input(str(source_file))
         self.display_graph = display_graph
         self.stream_v = stream["v"]
@@ -43,14 +43,17 @@ class FFMpeg(ppq.backends.backend.Backend):
         self.stream_a = stream_a.filter("afade", type="out", start_time=video_length_s - duration_s,
                                         duration=duration_s)
 
-    def scale_video(self, width: int, height: int) -> None:
+    def scale_video(self) -> None:
         """Scales the video and pads if necessary to the requested dimensions"""
+        width = self.width
+        height = self.height
         stream_v = self.stream_v.filter("scale", width=width, height=height, force_original_aspect_ratio=1)
         self.stream_v = stream_v.filter("pad", width=width, height=height, x="(ow-iw)/2", y="(oh-ih)/2", color="black")
 
-    def draw_text_in_box(self, video_text: str, length: int, width: int, height: int,
-                         box_height: int, move: bool, top: bool) -> None:
+    def draw_text_in_box(self, video_text: str, length: int, box_height: int, move: bool, top: bool) -> None:
         """Draws a semi-transparent box either at the top or bottom and writes text in it, optionally scrolling by"""
+        width = self.width
+        height = self.height
         y_location = 0 if top else height - box_height
 
         thickness = "fill" if self.version.startswith("N") else "max"  # Assume nightlies are new.

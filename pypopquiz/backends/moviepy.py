@@ -14,9 +14,7 @@ class Moviepy(pypopquiz.backends.backend.Backend):
     """Moviepy backend."""
 
     def __init__(self, source_file: Path, width: int = 1280, height: int = 720) -> None:
-        super().__init__()
-        self.width = width
-        self.height = height
+        super().__init__(width, height)
         if source_file.suffix in ('.mp3', '.wav', ):
             # Create a black clip with the audio file pasted on top
             audio = moviepy.editor.AudioFileClip(str(source_file))
@@ -54,24 +52,20 @@ class Moviepy(pypopquiz.backends.backend.Backend):
             fx(afx.audio_fadein, duration_s).\
             fx(afx.audio_fadeout, duration_s)
 
-    def scale_video(self, width: int, height: int) -> None:
+    def scale_video(self) -> None:
         """Scales the video and pads if necessary to the requested dimensions"""
-        self.video = self.video.fx(vfx.resize, (width, height))  # TODO: padding with black
+        self.video = self.video.fx(vfx.resize, (self.width, self.height))  # TODO: padding with black
 
-    def draw_text_in_box(
-            self, video_text: str, length: int, width: int, height: int, box_height: int, move: bool,
-            top: bool
-    ) -> None:
+    def draw_text_in_box(self, video_text: str, length: int, box_height: int, move: bool, top: bool) -> None:
         """Draws a semi-transparent box either at the top or bottom and writes text in it, optionally scrolling by"""
         self.video = Moviepy.draw_text_in_box_on_video(
-            self.video, video_text, length, width, height, box_height, move, top
+            self.video, video_text, length, self.height, box_height, move, top
         )
 
     @staticmethod
-    def draw_text_in_box_on_video(
-            video: moviepy.editor.VideoFileClip, video_text: str, length: float, width: int,
-            height: int, box_height: int, move: bool, top: bool
-    ) -> moviepy.editor.CompositeVideoClip:
+    def draw_text_in_box_on_video(video: moviepy.editor.VideoFileClip, video_text: str,
+                                  length: float, height: int, box_height: int, move: bool,
+                                  top: bool) -> moviepy.editor.CompositeVideoClip:
         """Draws a semi-transparent box either at the top or bottom and writes text in it, optionally scrolling by"""
         y_location = 0 if top else height - box_height
         txt = moviepy.editor.TextClip(video_text, font='Arial', color='white', fontsize=30)
@@ -79,10 +73,8 @@ class Moviepy(pypopquiz.backends.backend.Backend):
         video_w, _ = video.size
 
         # Paste the text on top of a colored bar
-        txt_col = txt.on_color(
-            size=(video_w + txt.w, box_height),  # automatic height: txt.h + 10
-            color=(0, 0, 0), pos=(video_w / 20, 'center'), col_opacity=0.6
-        )
+        txt_col = txt.on_color(size=(video_w + txt.w, box_height),  # automatic height: txt.h + 10
+                               color=(0, 0, 0), pos=(video_w / 20, 'center'), col_opacity=0.6)
 
         if move:
             txt_mov = txt_col.set_position(lambda t: (max(0, int(video_w - video_w * t / float(length))), y_location))
@@ -99,7 +91,7 @@ class Moviepy(pypopquiz.backends.backend.Backend):
         # create a black screen, of duration_s seconds.
         color = moviepy.editor.ColorClip(size=(self.width, self.height), color=(0, 0, 0), duration=duration_s)
         spacer = Moviepy.draw_text_in_box_on_video(
-            color, text, duration_s, self.width, self.height, box_height=100, move=True, top=False
+            color, text, duration_s, self.height, box_height=100, move=True, top=False
         )
         self.video = moviepy.editor.concatenate_videoclips([spacer, self.video])
 
