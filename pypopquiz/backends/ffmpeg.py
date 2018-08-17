@@ -34,6 +34,12 @@ class FFMpeg(ppq.backends.backend.Backend):
                                stream_v[1].filter("fifo"), stream_a[1].filter("afifo"), v=1, a=1).node
         self.stream_v, self.stream_a = joined[0], joined[1]
 
+    def combine(self, other: 'FFMpeg') -> None:  # type: ignore
+        """Combines this video stream with another stream"""
+        joined = ffmpeg.concat(self.stream_v.filter("fifo"), self.stream_a.filter("afifo"),
+                               other.stream_v.filter("fifo"), other.stream_a.filter("afifo"), v=1, a=1).node
+        self.stream_v, self.stream_a = joined[0], joined[1]
+
     def fade_in_and_out(self, duration_s: int, video_length_s: int) -> None:
         """Adds a fade-in and fade-out to/from black for the audio and video stream"""
         stream_v = self.stream_v.filter("fade", type="in", start_time=0, duration=duration_s)

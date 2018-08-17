@@ -21,7 +21,8 @@ def popquiz(input_file: Path, output_dir: Path, backend: str) -> None:
     """The main routine, constructing the entire popquiz output"""
 
     input_data = ppq.io.read_input(input_file)
-    ppq.io.log("Processing popquiz round {:d}".format(input_data["round"]))
+    round_id = input_data["round"]
+    ppq.io.log("Processing popquiz round {:d}".format(round_id))
 
     add_spacer = input_data.get('spacers', False)
 
@@ -32,7 +33,7 @@ def popquiz(input_file: Path, output_dir: Path, backend: str) -> None:
     q_videos, a_videos = [], []
     for index, question in enumerate(input_data["questions"]):
         question_id = index + 1
-        round_id = input_data["round"]
+
         ppq.io.log("Processing question {:d}: {:s} - {:s}".format(question_id, question["artist"], question["title"]))
         q_video = ppq.video.create_video("question", round_id, question, question_id, output_dir,
                                          backend=backend, add_spacer=add_spacer)
@@ -40,6 +41,9 @@ def popquiz(input_file: Path, output_dir: Path, backend: str) -> None:
                                          backend=backend, add_spacer=add_spacer)
         q_videos.append(q_video)
         a_videos.append(a_video)
+
+    ppq.video.combine_videos(q_videos, "question", round_id, output_dir, backend=backend)
+    ppq.video.combine_videos(a_videos, "answer", round_id, output_dir, backend=backend)
 
 
 if __name__ == "__main__":
