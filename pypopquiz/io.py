@@ -25,6 +25,7 @@ def verify_input(input_data: Dict) -> None:
             "round": {"type": "number"},
             "theme": {"type": "string"},
             "spacers": {"type": "boolean"},
+            "use_existing": {"type": "boolean"},
             "questions": {
                 "type": "array",
                 "minItems": 1,

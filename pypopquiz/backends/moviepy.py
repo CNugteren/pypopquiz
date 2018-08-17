@@ -45,6 +45,10 @@ class Moviepy(pypopquiz.backends.backend.Backend):
         """Concatenates a video and audio stream with itself to make a twice as long video"""
         self.video = moviepy.editor.concatenate_videoclips([self.video, self.video])
 
+    def combine(self, other: 'Moviepy') -> None:  # type: ignore
+        """Combines this video stream with another stream"""
+        self.video = moviepy.editor.concatenate_videoclips([self.video, other.video])
+
     def fade_in_and_out(self, duration_s: int, video_length_s: int) -> None:
         """Adds a fade-in and fade-out to/from black for the audio and video stream"""
         self.video = self.video.fx(vfx.fadein, duration_s).\
@@ -95,10 +99,14 @@ class Moviepy(pypopquiz.backends.backend.Backend):
         )
         self.video = moviepy.editor.concatenate_videoclips([spacer, self.video])
 
-    def run(self, file_name: Path) -> None:
+    def run(self, file_name: Path, dry_run: bool = False) -> Path:
         """Runs the backend to create the video, applying all the filters"""
         # Force mp4 extension, even if the original file was audio-only.
-        self.video.write_videofile(str(file_name.with_suffix('.mp4')))
+        file_name_out = file_name.with_suffix('.mp4')
+        if not dry_run:
+            self.video.write_videofile(str(file_name_out))
 
         # Close the file reader (typically terminates an ffmpeg process)
         self.reader_ref.close()
+
+        return file_name_out

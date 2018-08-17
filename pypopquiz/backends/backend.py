@@ -41,7 +41,7 @@ class Backend(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def run(self, file_name: Path) -> None:
+    def run(self, file_name: Path, dry_run: bool = False) -> Path:
         """Runs the backend to create the video, applying all the filters"""
         pass
 

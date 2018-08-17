@@ -60,30 +60,37 @@ def get_backend(backend: str):
     raise ValueError('Invalid backend {} selected.'.format(backend))
 
 
-def create_video(kind: str, round_id: int, question: Dict, question_id: int, output_dir: Path,
-                 width: int = 1280, height: int = 720, backend: str = 'ffmpeg', add_spacer: bool = False) -> Path:
-    """Creates a video for one question, either a question or an answer video"""
-    assert kind in ["question", "answer"]
-
+def get_video_source(question: Dict, kind: str) -> Dict:
+    """Returns the dict for the source file for this question or answer."""
     sources = question["sources"]
     source_index = question[kind]["source"]
     if source_index >= len(sources):
         raise ValueError("Source index {:d} given, but only {:d} source(s) provided".format(source_index, len(sources)))
-    video_data = sources[source_index]
-    video_file = output_dir / ppq.io.get_video_file_name(video_data)
+    return sources[source_index]
+
+
+def create_video(kind: str, round_id: int, question: Dict, question_id: int, output_dir: Path,
+                 width: int = 1280, height: int = 720, backend: str = 'ffmpeg', add_spacer: bool = False,
+                 use_existing: bool = False) -> Path:
+    """Creates a video for one question, either a question or an answer video"""
+    assert kind in ["question", "answer"]
+
+    video_source = get_video_source(question, kind)
+    video_file = output_dir / ppq.io.get_video_file_name(video_source)
     if not video_file.exists():
         raise FileNotFoundError("Video file '{:s}' doesn't exist".format(str(video_file)))
 
-    file_name = output_dir / ("{:02d}_{:02d}_{:s}.{:s}".format(round_id, question_id, kind, video_data["format"]))
-    if file_name.exists():
+    file_name = output_dir / ("{:02d}_{:02d}_{:s}.{:s}".format(round_id, question_id, kind, video_source["format"]))
+
+    if not use_existing and file_name.exists():
         file_name.unlink()  # deletes a previous version
 
     backend_cls = get_backend(backend)
     stream = backend_cls(video_file, width=width, height=height)
     stream_f = filter_stream(stream, kind, round_id, question, question_id, add_spacer=add_spacer)
-    stream_f.run(file_name)
+    file_name_out = stream_f.run(file_name, dry_run=use_existing)
 
-    return file_name
+    return file_name_out
 
 
 def combine_videos(video_files: List[Path], kind: str, round_id: int, output_dir: Path,
