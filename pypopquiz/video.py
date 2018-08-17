@@ -55,7 +55,7 @@ def get_backend(backend: str):
     """Selects the backend based on a string name"""
     if backend == 'ffmpeg':
         return ppq.backends.ffmpeg.FFMpeg
-    elif backend == 'moviepy':
+    if backend == 'moviepy':
         return ppq.backends.moviepy.Moviepy  # type: ignore
     raise ValueError('Invalid backend {} selected.'.format(backend))
 
