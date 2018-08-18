@@ -70,4 +70,4 @@ class Backend(abc.ABC):
             if tmp_out.exists():
                 # Use shutil.copy, since Path.rename does not work across drives:
                 ppq.io.log('Copy result to {}'.format(file_name_out))
-                shutil.copy(str(tmp_out), file_name_out)
+                shutil.copy(str(tmp_out), str(file_name_out))
