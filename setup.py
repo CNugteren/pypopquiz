@@ -1,7 +1,9 @@
-from setuptools import setup
+from setuptools import setup, find_packages
 
 setup(
     name="pypopquiz",
+    packages=find_packages(),
+    package_data={'': ['*.png']},
     version="0.1.0",
     author="Cedric Nugteren",
     url="https://github.com/CNugteren/pypopquiz",

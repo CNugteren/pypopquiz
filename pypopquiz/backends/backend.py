@@ -11,7 +11,6 @@ import pypopquiz as ppq
 import pypopquiz.io
 
 
-
 class Backend(abc.ABC):
     """Abstract class to specify the backend interface"""
 
@@ -49,12 +48,13 @@ class Backend(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def run(self, file_name: Path, dry_run: bool = False) -> Path:
-        """Runs the backend to create the video, applying all the filters"""
-        pass
-
     def add_spacer(self, text: str, duration_s: float) -> None:
         """Add a text spacer to the start of the clip."""
+        pass
+
+    @abc.abstractmethod
+    def run(self, file_name: Path, dry_run: bool = False) -> Path:
+        """Runs the backend to create the video, applying all the filters"""
         pass
 
     @staticmethod

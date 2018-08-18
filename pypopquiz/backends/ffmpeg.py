@@ -1,9 +1,10 @@
 """FFMPEG backend for video editing"""
 
-from pathlib import Path
 import subprocess
+from pathlib import Path
 
 import ffmpeg
+import pkg_resources
 
 import pypopquiz as ppq
 import pypopquiz.backends.backend
@@ -69,6 +70,18 @@ class FFMpeg(ppq.backends.backend.Backend):
         y_location_text = int(box_height * 1 / 4) if top else int(height - box_height * 3 / 4)
         self.stream_v = stream_v.drawtext(text=video_text, fontcolor="white", fontsize=50,
                                           x=x_location_text, y=y_location_text)
+
+    def add_spacer(self, text: str, duration_s: int) -> None:
+        """Add a text spacer to the start of the clip."""
+        still_image = pkg_resources.resource_filename("resources", "ffmpeg_still.png")
+        spacer = ffmpeg.input(still_image, t=duration_s)
+        spacer_v = spacer["v"]
+        spacer_a = ffmpeg.filter("aevalsrc", exprs="0", duration=duration_s)  # TODO: This doesn't work
+        spacer_v = spacer_v.filter("scale", width=self.width, height=self.height, force_original_aspect_ratio=1)
+        joined = ffmpeg.concat(spacer_v.filter("fifo"), spacer_a.filter("afifo"),
+                               self.stream_v.filter("fifo"), self.stream_a.filter("afifo"), v=1, a=1).node
+        self.stream_v, self.stream_a = joined[0], joined[1]
+        self.draw_text_in_box(video_text=text, length=duration_s, box_height=100, move=True, top=False)
 
     def run(self, file_name: Path, dry_run: bool = False) -> Path:
         """Runs the ffmpeg command to create the video, applying all the filters"""
