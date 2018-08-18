@@ -70,16 +70,20 @@ class FFMpeg(ppq.backends.backend.Backend):
         self.stream_v = stream_v.drawtext(text=video_text, fontcolor="white", fontsize=50,
                                           x=x_location_text, y=y_location_text)
 
-    def run(self, file_name: Path) -> None:
+    def run(self, file_name: Path, dry_run: bool = False) -> Path:
         """Runs the ffmpeg command to create the video, applying all the filters"""
-        output_stream = ffmpeg.output(self.stream_v, self.stream_a, str(file_name))
-        if self.display_graph:
-            output_stream.view(filename="ffmpeg_graph")  # optional visualisation of the graph
-        ppq.io.log("Running ffmpeg...")
-        ppq.io.log("")
-        output_stream.run()
-        ppq.io.log("")
-        ppq.io.log("Completed ffmpeg, successfully generated result")
+        with FFMpeg.tmp_intermediate_file(file_name) as tmp_out:
+            output_stream = ffmpeg.output(self.stream_v, self.stream_a, str(tmp_out))
+            if self.display_graph:
+                output_stream.view(filename="ffmpeg_graph")  # optional visualisation of the graph
+            if not dry_run:
+                ppq.io.log("Running ffmpeg...")
+                ppq.io.log("")
+                output_stream.run()
+                ppq.io.log("")
+                ppq.io.log("Completed ffmpeg, successfully generated result")
+
+        return file_name
 
 
 def ffmpeg_version() -> str:
