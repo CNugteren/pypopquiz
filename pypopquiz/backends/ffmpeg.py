@@ -72,15 +72,16 @@ class FFMpeg(ppq.backends.backend.Backend):
 
     def run(self, file_name: Path, dry_run: bool = False) -> Path:
         """Runs the ffmpeg command to create the video, applying all the filters"""
-        output_stream = ffmpeg.output(self.stream_v, self.stream_a, str(file_name))
-        if self.display_graph:
-            output_stream.view(filename="ffmpeg_graph")  # optional visualisation of the graph
-        if not dry_run:
-            ppq.io.log("Running ffmpeg...")
-            ppq.io.log("")
-            output_stream.run()
-            ppq.io.log("")
-            ppq.io.log("Completed ffmpeg, successfully generated result")
+        with FFMpeg.tmp_intermediate_file(file_name) as tmp_out:
+            output_stream = ffmpeg.output(self.stream_v, self.stream_a, str(tmp_out))
+            if self.display_graph:
+                output_stream.view(filename="ffmpeg_graph")  # optional visualisation of the graph
+            if not dry_run:
+                ppq.io.log("Running ffmpeg...")
+                ppq.io.log("")
+                output_stream.run()
+                ppq.io.log("")
+                ppq.io.log("Completed ffmpeg, successfully generated result")
 
         return file_name
 

@@ -2,6 +2,7 @@
 
 from pathlib import Path
 
+
 import moviepy.editor
 from moviepy.editor import afx
 from moviepy.editor import vfx
@@ -101,10 +102,14 @@ class Moviepy(pypopquiz.backends.backend.Backend):
 
     def run(self, file_name: Path, dry_run: bool = False) -> Path:
         """Runs the backend to create the video, applying all the filters"""
-        # Force mp4 extension, even if the original file was audio-only.
-        file_name_out = file_name.with_suffix('.mp4')
+        file_name_out = file_name
+        if file_name.suffix in ('.mp3', '.wav', ):
+            # Force mp4 extension, even if the original file was audio-only.
+            file_name_out = file_name.with_suffix('.mp4')
+
         if not dry_run:
-            self.video.write_videofile(str(file_name_out))
+            with Moviepy.tmp_intermediate_file(file_name_out) as tmp_out:
+                self.video.write_videofile(str(tmp_out))
 
         # Close the file reader (typically terminates an ffmpeg process)
         self.reader_ref.close()

@@ -1,6 +1,7 @@
 {
   "round": 1,
   "theme": "Intro's",
+  "use_cached_video_files": true,
   "questions": [
     {
       "artist": "AC/DC",

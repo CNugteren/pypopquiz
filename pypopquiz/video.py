@@ -71,7 +71,7 @@ def get_video_source(question: Dict, kind: str) -> Dict:
 
 def create_video(kind: str, round_id: int, question: Dict, question_id: int, output_dir: Path,
                  width: int = 1280, height: int = 720, backend: str = 'ffmpeg', add_spacer: bool = False,
-                 use_existing: bool = False) -> Path:
+                 use_cached_video_files: bool = False) -> Path:
     """Creates a video for one question, either a question or an answer video"""
     assert kind in ["question", "answer"]
 
@@ -80,15 +80,21 @@ def create_video(kind: str, round_id: int, question: Dict, question_id: int, out
     if not video_file.exists():
         raise FileNotFoundError("Video file '{:s}' doesn't exist".format(str(video_file)))
 
-    file_name = output_dir / ("{:02d}_{:02d}_{:s}.{:s}".format(round_id, question_id, kind, video_source["format"]))
+    # Force output file to be a video
+    target_format = 'mp4'
+    file_name = output_dir / ("{:02d}_{:02d}_{:s}.{:s}".format(round_id, question_id, kind, target_format))
 
-    if not use_existing and file_name.exists():
-        file_name.unlink()  # deletes a previous version
+    generate_video = True
+    if file_name.exists():
+        if use_cached_video_files:
+            generate_video = False
+        else:
+            file_name.unlink()  # deletes a previous version
 
     backend_cls = get_backend(backend)
     stream = backend_cls(video_file, width=width, height=height)
-    stream_f = filter_stream(stream, kind, round_id, question, question_id, add_spacer=add_spacer)
-    file_name_out = stream_f.run(file_name, dry_run=use_existing)
+    stream = filter_stream(stream, kind, round_id, question, question_id, add_spacer=add_spacer)
+    file_name_out = stream.run(file_name, dry_run=not generate_video)
 
     return file_name_out
 

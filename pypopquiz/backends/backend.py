@@ -1,7 +1,15 @@
 """Abstract base class to define the video-editing interface"""
 
 import abc
+import contextlib
 from pathlib import Path
+import shutil
+import tempfile
+from typing import Generator
+
+import pypopquiz as ppq
+import pypopquiz.io
+
 
 
 class Backend(abc.ABC):
@@ -48,3 +56,18 @@ class Backend(abc.ABC):
     def add_spacer(self, text: str, duration_s: float) -> None:
         """Add a text spacer to the start of the clip."""
         pass
+
+    @staticmethod
+    @contextlib.contextmanager
+    def tmp_intermediate_file(file_name_out: Path) -> Generator[Path, None, None]:
+        """Create a temporary intermediate file and copy to destination after body completes."""
+        with tempfile.TemporaryDirectory() as tmpdirname:
+            ppq.io.log('Created temporary directory {}'.format(tmpdirname))
+            tmp_out = Path(tmpdirname) / file_name_out.name
+
+            yield tmp_out
+
+            if tmp_out.exists():
+                # Use shutil.copy, since Path.rename does not work across drives:
+                ppq.io.log('Copy result to {}'.format(file_name_out))
+                shutil.copy(str(tmp_out), file_name_out)
