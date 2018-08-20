@@ -2,6 +2,7 @@
   "round": 2,
   "theme": "Advanced features demo",
   "use_cached_video_files": true,
+  "background_image": "background.png",
   "questions": [
     {
       "artist": "The Wombats",
