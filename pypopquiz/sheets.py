@@ -10,6 +10,7 @@ import pypopquiz.io
 def create_sheets(kind: str, input_data: Dict, output_dir: Path, table_width: int = 40) -> None:
     """Creates a question or answer sheet for printing in Markdown format"""
     assert kind in ["question", "answer"]
+    ppq.io.log("Generating {:s} sheets for round {:02d}".format(kind, input_data["round"]))
 
     # The file header
     contents = list()
@@ -30,4 +31,5 @@ def create_sheets(kind: str, input_data: Dict, output_dir: Path, table_width: in
 
     # Output to disk as Markdown
     file_name = output_dir / ("{:02d}_{:s}.md".format(input_data["round"], kind))
+    ppq.io.log("Storing {:s} sheets to {:s}".format(kind, str(file_name)))
     ppq.io.write_lines(contents, file_name)
