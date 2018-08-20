@@ -92,10 +92,7 @@ def read_input(file_name: Path) -> Dict:
 
 def write_lines(text: Iterable[str], file_name: Path) -> None:
     """Writes a list of items to file"""
-    with file_name.open("w") as file:
-        for line in text:
-            file.write(line + "\n")
-        file.write("\n")
+    file_name.write_text("\n".join(text)+"\n")
 
 
 def get_video_file_name(video_data: Dict[str, str]) -> Path:
