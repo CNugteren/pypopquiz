@@ -28,12 +28,13 @@ The tests are currently still quite limited, but you can already run the linters
 Feature list / roadmap
 -------------
 
-| Input/output                   | Status      |
-|--------------------------------|-------------|
-| Input source: Youtube video    | ✔           |
-| Input source: Local mp3        | ✔           |
-| Output: Questions video        | in progress |
-| Output: Answers video          | in progress |
+| Input/output                     | Status      |
+|----------------------------------|-------------|
+| Input source: Youtube video      | ✔           |
+| Input source: Local mp3          | ✔           |
+| Output: Questions video          | ✔           |
+| Output: Answers video            | ✔           |
+| Output: Question & answer sheets | ✔           |
 
 | Types of rounds                | Status      |
 |--------------------------------|-------------|

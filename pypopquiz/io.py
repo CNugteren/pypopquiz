@@ -2,7 +2,7 @@
 
 import json
 from pathlib import Path
-from typing import Dict
+from typing import Dict, Iterable
 
 import jsonschema
 from pytube import YouTube
@@ -88,6 +88,11 @@ def read_input(file_name: Path) -> Dict:
         input_data = json.load(json_data)
         verify_input(input_data)
         return input_data
+
+
+def write_lines(text: Iterable[str], file_name: Path) -> None:
+    """Writes a list of items to file"""
+    file_name.write_text("\n".join(text)+"\n")
 
 
 def get_video_file_name(video_data: Dict[str, str]) -> Path:

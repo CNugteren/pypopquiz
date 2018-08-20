@@ -5,6 +5,7 @@ from pathlib import Path
 
 import pypopquiz as ppq
 import pypopquiz.io
+import pypopquiz.sheets
 import pypopquiz.video
 
 
@@ -47,6 +48,9 @@ def popquiz(input_file: Path, output_dir: Path, backend: str) -> None:
 
     ppq.video.combine_videos(q_videos, "question", round_id, output_dir, backend=backend)
     ppq.video.combine_videos(a_videos, "answer", round_id, output_dir, backend=backend)
+
+    ppq.sheets.create_sheets("question", input_data, output_dir)
+    ppq.sheets.create_sheets("answer", input_data, output_dir)
 
 
 if __name__ == "__main__":
