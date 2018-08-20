@@ -19,7 +19,7 @@ def get_interval_in_s(interval: List[str]) -> List[int]:
 
 def filter_stream(stream: VideoBackend, kind: str, round_id: int, question: Dict, question_id: int,
                   box_height: int = 100, fade_amount_s: int = 3,
-                  add_spacer: bool = False) -> VideoBackend:
+                  add_spacer: bool = False, is_example: bool = False) -> VideoBackend:
     """Adds ffmpeg filters to the stream, producing a separate video and audio stream as a result"""
 
     repetitions = question[kind].get("repetitions", 1)
@@ -27,7 +27,11 @@ def filter_stream(stream: VideoBackend, kind: str, round_id: int, question: Dict
     if interval[1] <= interval[0]:
         raise ValueError("Invalid interval: {:s}".format(str(interval)))
     length_s = interval[1] - interval[0]
-    question_text = "Question {:d}.{:d}".format(round_id, question_id)
+
+    if is_example:
+        question_text = "Example question for round {:d}".format(round_id)
+    else:
+        question_text = "Question {:d}.{:d}".format(round_id, question_id)
     answer_text = "{:s} - {:s}".format(question["artist"], question["title"])
 
     stream.trim(start_s=interval[0], end_s=interval[1])
@@ -71,7 +75,7 @@ def get_video_source(question: Dict, kind: str) -> Dict:
 
 def create_video(kind: str, round_id: int, question: Dict, question_id: int, output_dir: Path,
                  width: int = 1280, height: int = 720, backend: str = 'ffmpeg', add_spacer: bool = False,
-                 use_cached_video_files: bool = False) -> Path:
+                 use_cached_video_files: bool = False, is_example: bool = False) -> Path:
     """Creates a video for one question, either a question or an answer video"""
     assert kind in ["question", "answer"]
 
@@ -93,7 +97,7 @@ def create_video(kind: str, round_id: int, question: Dict, question_id: int, out
 
     backend_cls = get_backend(backend)
     stream = backend_cls(video_file, width=width, height=height)
-    stream = filter_stream(stream, kind, round_id, question, question_id, add_spacer=add_spacer)
+    stream = filter_stream(stream, kind, round_id, question, question_id, add_spacer=add_spacer, is_example=is_example)
     file_name_out = stream.run(file_name, dry_run=not generate_video)
 
     return file_name_out
