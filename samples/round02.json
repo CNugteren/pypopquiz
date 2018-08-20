@@ -1,0 +1,16 @@
+{
+  "round": 2,
+  "theme": "Advanced features demo",
+  "use_cached_video_files": true,
+  "questions": [
+    {
+      "artist": "The Wombats",
+      "title": "Tokyo (Vampires & Wolves)",
+      "sources": [
+        {"source": "youtube", "url": "DRhUIJextp8", "format": "mp4"}
+      ],
+      "question": {"source": 0, "interval": ["1:21", "1:31"], "video": true, "audio": true, "repetitions": 1},
+      "answer": {"source": 0, "interval": ["1:37", "1:43"], "video": true, "audio": true, "repetitions": 1}
+    }
+  ]
+}
