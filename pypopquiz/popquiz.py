@@ -27,6 +27,7 @@ def popquiz(input_file: Path, output_dir: Path, backend: str) -> None:
 
     add_spacer = input_data.get('spacers', False)
     use_cached_video_files = input_data.get('use_cached_video_files', False)
+    first_question_is_example = input_data.get('first_question_is_example', False)
 
     for question in input_data["questions"]:
         for source in question["sources"]:
@@ -34,17 +35,21 @@ def popquiz(input_file: Path, output_dir: Path, backend: str) -> None:
 
     q_videos, a_videos = [], []
     for index, question in enumerate(input_data["questions"]):
-        question_id = index + 1
+        question_id = index + int(not first_question_is_example)  # start with 0 when having an example
+        is_example = first_question_is_example and index == 0
 
         ppq.io.log("Processing question {:d}: {:s} - {:s}".format(question_id, question["artist"], question["title"]))
         q_video = ppq.video.create_video("question", round_id, question, question_id, output_dir,
                                          backend=backend, add_spacer=add_spacer,
-                                         use_cached_video_files=use_cached_video_files)
+                                         use_cached_video_files=use_cached_video_files, is_example=is_example)
         a_video = ppq.video.create_video("answer", round_id, question, question_id, output_dir,
                                          backend=backend, add_spacer=add_spacer,
-                                         use_cached_video_files=use_cached_video_files)
+                                         use_cached_video_files=use_cached_video_files, is_example=is_example)
         q_videos.append(q_video)
-        a_videos.append(a_video)
+        if is_example:
+            q_videos.append(a_video)  # show the answer of the example directly after the example question
+        else:
+            a_videos.append(a_video)
 
     ppq.video.combine_videos(q_videos, "question", round_id, output_dir, backend=backend)
     ppq.video.combine_videos(a_videos, "answer", round_id, output_dir, backend=backend)
