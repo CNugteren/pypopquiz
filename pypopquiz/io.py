@@ -46,10 +46,9 @@ def verify_input(input_data: Dict) -> None:
                 "additionalProperties": False,
                 "items": {
                     "type": "object",
-                    "required": ["artist", "title", "sources", "question", "answer"],
+                    "required": ["sources", "question_video", "question_audio",
+                                 "answer_video", "answer_audio", "answers"],
                     "properties": {
-                        "artist": {"type": "string"},
-                        "title": {"type": "string"},
                         "sources": {
                             "type": "array",
                             "minItems": 1,
@@ -64,28 +63,73 @@ def verify_input(input_data: Dict) -> None:
                                 }
                             }
                         },
-                        "question": {
-                            "type": "object",
-                            "required": ["source", "interval", "audio", "video"],
-                            "additionalProperties": True,
-                            "properties": {
-                                "source": {"type": "number"},
-                                "interval": {"type": "array"},
-                                "audio": {"type": "boolean"},
-                                "video": {"type": "boolean"},
-                                "repetitions": {"type": "number"},
+                        "question_video": {
+                            "type": "array",
+                            "minItems": 1,
+                            "additionalProperties": False,
+                            "items": {
+                                "type": "object",
+                                "required": ["source", "interval"],
+                                "additionalProperties": True,
+                                "properties": {
+                                    "source": {"type": "number"},
+                                    "interval": {"type": "array"},
+                                    "repetitions": {"type": "number"},
+                                }
                             }
                         },
-                        "answer": {
-                            "type": "object",
-                            "required": ["source", "interval", "audio", "video"],
-                            "additionalProperties": True,
-                            "properties": {
-                                "source": {"type": "number"},
-                                "interval": {"type": "array"},
-                                "audio": {"type": "boolean"},
-                                "video": {"type": "boolean"},
-                                "repetitions": {"type": "number"},
+                        "question_audio": {
+                            "type": "array",
+                            "minItems": 1,
+                            "additionalProperties": False,
+                            "items": {
+                                "type": "object",
+                                "required": ["source", "interval"],
+                                "additionalProperties": True,
+                                "properties": {
+                                    "source": {"type": "number"},
+                                    "interval": {"type": "array"},
+                                    "repetitions": {"type": "number"},
+                                }
+                            }
+                        },
+                        "answer_video": {
+                            "type": "array",
+                            "minItems": 1,
+                            "additionalProperties": False,
+                            "items": {
+                                "type": "object",
+                                "required": ["source", "interval"],
+                                "additionalProperties": True,
+                                "properties": {
+                                    "source": {"type": "number"},
+                                    "interval": {"type": "array"},
+                                    "repetitions": {"type": "number"},
+                                }
+                            }
+                        },
+                        "answer_audio": {
+                            "type": "array",
+                            "minItems": 1,
+                            "additionalProperties": False,
+                            "items": {
+                                "type": "object",
+                                "required": ["source", "interval"],
+                                "additionalProperties": True,
+                                "properties": {
+                                    "source": {"type": "number"},
+                                    "interval": {"type": "array"},
+                                    "repetitions": {"type": "number"},
+                                }
+                            }
+                        },
+                        "answers": {
+                            "type": "array",
+                            "minItems": 1,
+                            "additionalProperties": False,
+                            "items": {
+                                "type": "object",
+                                "additionalProperties": True,
                             }
                         }
                     }
@@ -94,6 +138,20 @@ def verify_input(input_data: Dict) -> None:
         }
     }
     jsonschema.validate(input_data, schema)
+    for question in input_data["questions"]:
+        if len(question["answers"]) != len(question["answer_video"]):
+            raise ValueError("Expected {:d} answers, got {:d}".
+                             format(len(question["answer_video"]), len(question["answers"])))
+        question_video_time = sum((get_interval_duration(item["interval"]) for item in question["question_video"]))
+        question_audio_time = sum((get_interval_duration(item["interval"]) for item in question["question_audio"]))
+        if question_video_time != question_audio_time:
+            raise ValueError("Mismatching question audio ({:d}s) and video ({:d}s) runtime".
+                             format(question_audio_time, question_video_time))
+        answer_video_time = sum((get_interval_duration(item["interval"]) for item in question["answer_video"]))
+        answer_audio_time = sum((get_interval_duration(item["interval"]) for item in question["answer_audio"]))
+        if answer_video_time != answer_audio_time:
+            raise ValueError("Mismatching answer audio ({:d}s) and video ({:d}s) runtime".
+                             format(answer_audio_time, answer_video_time))
 
 
 def read_input(file_name: Path) -> Dict:

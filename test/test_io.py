@@ -8,7 +8,7 @@ import pypopquiz.io
 
 class TestIO(unittest.TestCase):
 
-    SAMPLE_FILES = [Path("samples/round01.json")]
+    SAMPLE_FILES = [Path("samples/round01.json"), Path("samples/round02.json")]
 
     def test_read_input(self) -> None:
         for sample_file in self.SAMPLE_FILES:
