@@ -2,7 +2,7 @@
 
 import json
 from pathlib import Path
-from typing import Dict, Iterable
+from typing import Dict, Iterable, List, Tuple
 
 import jsonschema
 from pytube import YouTube
@@ -11,6 +11,18 @@ from pytube import YouTube
 def log(message: str) -> None:
     """Prints a log message to screen"""
     print("[PPQ] " + message)
+
+
+def get_interval_in_s(interval: Tuple[str, str]) -> Tuple[int, int]:
+    """Converts an interval in string form (e.g. [1:10, 2:30] in seconds, e.g. [70, 150] seconds"""
+    return (int(interval[0].split(":")[0]) * 60 + int(interval[0].split(":")[1]),
+            int(interval[1].split(":")[0]) * 60 + int(interval[1].split(":")[1]))
+
+
+def get_interval_duration(interval: Tuple[str, str]) -> int:
+    """Converts an interval in string form (e.g. [1:10, 2:30] to duration, e.g. 80 seconds"""
+    interval_s = get_interval_in_s(interval)
+    return interval_s[1] - interval_s[0]
 
 
 def verify_input(input_data: Dict) -> None:

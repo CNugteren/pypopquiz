@@ -12,18 +12,13 @@ import pypopquiz.backends.moviepy
 VideoBackend = ppq.backends.backend.Backend
 
 
-def get_interval_in_s(interval: List[str]) -> List[int]:
-    """Converts an interval in string form (e.g. [1:10, 2:30] in seconds, e.g. [70, 150] seconds"""
-    return [int(sec.split(":")[0]) * 60 + int(sec.split(":")[1]) for sec in interval]
-
-
 def filter_stream(stream: VideoBackend, kind: str, round_id: int, question: Dict, question_id: int,
                   box_height: int = 100, fade_amount_s: int = 3,
                   add_spacer: bool = False, is_example: bool = False) -> VideoBackend:
     """Adds ffmpeg filters to the stream, producing a separate video and audio stream as a result"""
 
     repetitions = question[kind].get("repetitions", 1)
-    interval = get_interval_in_s(question[kind]["interval"])
+    interval = ppq.io.get_interval_in_s(question[kind]["interval"])
     if interval[1] <= interval[0]:
         raise ValueError("Invalid interval: {:s}".format(str(interval)))
     length_s = interval[1] - interval[0]
