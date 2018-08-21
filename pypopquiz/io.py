@@ -172,27 +172,27 @@ def get_video_file_name(video_data: Dict[str, str]) -> Path:
     return Path(video_data["url"] + "." + video_data["format"])
 
 
-def get_video(video_data: Dict[str, str], output_dir: Path, input_dir: Path) -> None:
-    """Downloads a video to a local output directory, skips if already there"""
+def get_source(source_data: Dict[str, str], output_dir: Path, input_dir: Path) -> None:
+    """Retrieves a source and stores is in a local output directory, skips if already there"""
 
     if not output_dir.exists():
         output_dir.mkdir()
 
-    video_source = video_data["source"]
-    video_id = video_data["url"]
+    source_type = source_data["source"]
+    source_url = source_data["url"]
 
-    output_file = output_dir / get_video_file_name(video_data)
+    output_file = output_dir / get_video_file_name(source_data)
     if output_file.exists():
-        log("Skipping downloading of video '{:s}', already on disk".format(video_id))
+        log("Skipping downloading of video '{:s}', already on disk".format(source_url))
         return
 
-    if video_source == "youtube":
-        log("Downloading video '{:s}' from Youtube...".format(video_id))
-        video = YouTube("https://www.youtube.com/watch?v={:s}".format(video_id))
-        video = video.streams.filter(subtype=video_data["format"]).first()
-        video.download(output_path=str(output_dir), filename=video_id)
-    elif video_source == "local":
-        input_file = input_dir / get_video_file_name(video_data)
+    if source_type == "youtube":
+        log("Downloading video '{:s}' from Youtube...".format(source_url))
+        video = YouTube("https://www.youtube.com/watch?v={:s}".format(source_url))
+        video = video.streams.filter(subtype=source_data["format"]).first()
+        video.download(output_path=str(output_dir), filename=source_url)
+    elif source_type == "local":
+        input_file = input_dir / get_video_file_name(source_data)
         input_file.rename(output_file)
     else:
-        raise KeyError("Unsupported source(s) '{:s}'".format(video_source))
+        raise KeyError("Unsupported source(s) '{:s}'".format(source_type))
