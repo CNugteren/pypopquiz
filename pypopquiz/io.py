@@ -24,7 +24,7 @@ def verify_input(input_data: Dict) -> None:
         "properties": {
             "round": {"type": "number"},
             "theme": {"type": "string"},
-            "spacers": {"type": "string"},
+            "spacers": {"type": "boolean"},
             "use_cached_video_files": {"type": "boolean"},
             "background_image": {"type": "string"},
             "first_question_is_example": {"type": "boolean"},
