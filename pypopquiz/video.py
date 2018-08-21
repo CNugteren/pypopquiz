@@ -49,7 +49,7 @@ def filter_stream(stream: VideoBackend, kind: str, round_id: int, question: Dict
     else:
         raise RuntimeError("Repetition not 1 or multiple 2, got: {:d}".format(repetitions))
 
-    if len(spacer_txt) != 0 and kind == "question":
+    if spacer_txt) != "" and kind == "question":
         stream.add_spacer(spacer_txt, duration_s=2)
 
     return stream

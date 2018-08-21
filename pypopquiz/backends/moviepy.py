@@ -88,7 +88,8 @@ class Moviepy(pypopquiz.backends.backend.Backend):
         txt_y_location = (box_height - txt.h) // 2 + y_location
 
         if move:
-            txt_mov = txt.set_position(lambda t: (max(txt_left_margin, round(video_w - video_w * t / float(length))), txt_y_location))
+            txt_mov = txt.set_position(lambda t: (max(txt_left_margin,
+                                                      round(video_w - video_w * t / float(length))), txt_y_location))
         else:
             txt_mov = txt.set_position((txt_left_margin, txt_y_location))
 
