@@ -1,11 +1,12 @@
 {
   "round": 1,
   "theme": "Intro's",
+  "questioned": ["artist", "title"],
   "use_cached_video_files": true,
   "questions": [
     {
       "sources": [
-        {"source": "youtube", "url": "v2AC41dglnM", "format": "mp4"}
+        {"source": "youtube", "identifier": "v2AC41dglnM", "format": "mp4"}
       ],
       "question_video": [{"source": 0, "interval": ["0:00", "0:10"], "repetitions": 1}],
       "question_audio": [{"source": 0, "interval": ["0:00", "0:10"], "repetitions": 1}],
@@ -15,7 +16,7 @@
     },
     {
       "sources": [
-        {"source": "youtube", "url": "8mGBaXPlri8", "format": "mp4"}
+        {"source": "youtube", "identifier": "8mGBaXPlri8", "format": "mp4"}
       ],
       "question_video": [{"source": 0, "interval": ["0:14", "0:22"], "repetitions": 1}],
       "question_audio": [{"source": 0, "interval": ["0:14", "0:22"], "repetitions": 1}],

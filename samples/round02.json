@@ -3,12 +3,13 @@
   "theme": "Advanced features demo",
   "use_cached_video_files": true,
   "background_image": "background.png",
+  "questioned": ["artist clip", "title clip", "artist song", "title song"],
   "first_question_is_example": true,
   "questions": [
     {
       "sources": [
-        {"source": "youtube", "url": "DRhUIJextp8", "format": "mp4"},
-        {"source": "youtube", "url": "PDKKeLhHgl8", "format": "mp4"}
+        {"source": "youtube", "identifier": "DRhUIJextp8", "format": "mp4"},
+        {"source": "youtube", "identifier": "PDKKeLhHgl8", "format": "mp4"}
       ],
       "question_video": [
         {"source": 0, "interval": ["1:21", "1:32"], "repetitions": 2}
@@ -28,16 +29,6 @@
         {"artist clip": "The Wombats", "title clip": "Tokyo (Vampires & Wolves)"},
         {"artist song": "The Animals", "title song": "House of the Rising Sun"}
       ]
-    },
-    {
-      "sources": [
-        {"source": "youtube", "url": "PDKKeLhHgl8", "format": "mp4"}
-      ],
-      "question_video": [{"source": 0, "interval": ["0:45", "0:57"], "repetitions": 1}],
-      "question_audio": [{"source": 0, "interval": ["0:45", "0:57"], "repetitions": 1}],
-      "answer_video": [{"source": 0, "interval": ["0:08", "0:20"], "repetitions": 1}],
-      "answer_audio": [{"source": 0, "interval": ["0:08", "0:20"], "repetitions": 1}],
-      "answers": [{"artist": "The Animals", "title": "House of the Rising Sun"}]
     }
   ]
 }

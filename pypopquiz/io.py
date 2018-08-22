@@ -31,7 +31,7 @@ def verify_input(input_data: Dict) -> None:
     schema = {
         "$schema": "http://json-schema.org/draft-04/schema#",
         "type": "object",
-        "required": ["round", "theme", "questions"],
+        "required": ["round", "theme", "questions", "questioned"],
         "additionalProperties": False,
         "properties": {
             "round": {"type": "number"},
@@ -40,6 +40,14 @@ def verify_input(input_data: Dict) -> None:
             "use_cached_video_files": {"type": "boolean"},
             "background_image": {"type": "string"},
             "first_question_is_example": {"type": "boolean"},
+            "questioned": {
+                "type": "array",
+                "minItems": 1,
+                "additionalProperties": False,
+                "items": {
+                    "type": "string",
+                }
+            },
             "questions": {
                 "type": "array",
                 "minItems": 1,
@@ -55,10 +63,10 @@ def verify_input(input_data: Dict) -> None:
                             "additionalProperties": False,
                             "items": {
                                 "type": "object",
-                                "required": ["source", "url", "format"],
+                                "required": ["source", "identifier", "format"],
                                 "properties": {
                                     "source": {"type": "string"},
-                                    "url": {"type": "string"},
+                                    "identifier": {"type": "string"},
                                     "format": {"type": "string"},
                                 }
                             }
@@ -152,6 +160,10 @@ def verify_input(input_data: Dict) -> None:
         if answer_video_time != answer_audio_time:
             raise ValueError("Mismatching answer audio ({:d}s) and video ({:d}s) runtime".
                              format(answer_audio_time, answer_video_time))
+        answer_keys = sorted([item for answer_dict in question["answers"] for item in answer_dict.keys()])
+        questioned = sorted(input_data["questioned"])
+        if answer_keys != questioned:
+            raise ValueError("Mismatching answer keys given under 'answered' and 'questioned', they should match")
 
 
 def read_input(file_name: Path) -> Dict:
@@ -167,9 +179,9 @@ def write_lines(text: Iterable[str], file_name: Path) -> None:
     file_name.write_text("\n".join(text)+"\n")
 
 
-def get_video_file_name(video_data: Dict[str, str]) -> Path:
-    """Constructs the name of the video file on disk"""
-    return Path(video_data["url"] + "." + video_data["format"])
+def get_source_file_name(source_data: Dict[str, str]) -> Path:
+    """Constructs the name of the source file on disk"""
+    return Path(source_data["identifier"] + "." + source_data["format"])
 
 
 def get_source(source_data: Dict[str, str], output_dir: Path, input_dir: Path) -> None:
@@ -179,9 +191,9 @@ def get_source(source_data: Dict[str, str], output_dir: Path, input_dir: Path) -
         output_dir.mkdir()
 
     source_type = source_data["source"]
-    source_url = source_data["url"]
+    source_url = source_data["identifier"]
 
-    output_file = output_dir / get_video_file_name(source_data)
+    output_file = output_dir / get_source_file_name(source_data)
     if output_file.exists():
         log("Skipping downloading of video '{:s}', already on disk".format(source_url))
         return
@@ -192,7 +204,7 @@ def get_source(source_data: Dict[str, str], output_dir: Path, input_dir: Path) -
         video = video.streams.filter(subtype=source_data["format"]).first()
         video.download(output_path=str(output_dir), filename=source_url)
     elif source_type == "local":
-        input_file = input_dir / get_video_file_name(source_data)
+        input_file = input_dir / get_source_file_name(source_data)
         input_file.rename(output_file)
     else:
         raise KeyError("Unsupported source(s) '{:s}'".format(source_type))
