@@ -80,18 +80,20 @@ class Moviepy(pypopquiz.backends.backend.Backend):
 
         if on_box:
             color_clip = moviepy.editor.ColorClip(size=(video_w, box_height), color=(0, 0, 0))
-            color_clip = color_clip.set_opacity(0.6)
+            color_clip = color_clip.set_opacity(0.6)  # pylint: disable=assignment-from-no-return
             color_clip = color_clip.set_position(pos=(0, y_location))
             clips.append(color_clip)
 
         txt = moviepy.editor.TextClip(video_text, font='Arial', color='white', fontsize=30)
         txt_y_location = (box_height - txt.h) // 2 + y_location
 
+        # pylint: disable=assignment-from-no-return
         if move:
             txt_mov = txt.set_position(lambda t: (max(txt_left_margin,
                                                       round(video_w - video_w * t / float(length))), txt_y_location))
         else:
             txt_mov = txt.set_position((txt_left_margin, txt_y_location))
+        # pylint: enable=assignment-from-no-return
 
         clips.append(txt_mov)
 
@@ -104,7 +106,7 @@ class Moviepy(pypopquiz.backends.backend.Backend):
         """Add a text spacer to the start of the clip."""
         # create a black screen, of duration_s seconds.
         color = moviepy.editor.ColorClip(size=(self.width, self.height), color=(0, 0, 0), duration=duration_s)
-        color = color.set_fps(30)
+        color = color.set_fps(30)  # pylint: disable=assignment-from-no-return
         spacer = Moviepy.draw_text_in_box_on_video(
             color, text, duration_s, self.height, box_height=100, move=True, top=False, on_box=False
         )
