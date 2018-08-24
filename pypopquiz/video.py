@@ -14,7 +14,7 @@ VideoBackend = ppq.backends.backend.Backend
 
 def filter_stream(stream: VideoBackend, kind: str, round_id: int, answer_text: str, question_id: int,
                   repetitions: int, interval: Tuple[int, int], box_height: int = 100, fade_amount_s: int = 3,
-                  add_spacer: bool = False, is_example: bool = False) -> VideoBackend:
+                  spacer_txt: str = "", is_example: bool = False) -> VideoBackend:
     """Adds ffmpeg filters to the stream, producing a separate video and audio stream as a result"""
 
     if interval[1] <= interval[0]:
@@ -41,8 +41,8 @@ def filter_stream(stream: VideoBackend, kind: str, round_id: int, answer_text: s
     else:
         raise RuntimeError("Repetition not 1 or multiple 2, got: {:d}".format(repetitions))
 
-    if add_spacer and kind == "question":
-        stream.add_spacer("Get Ready...", duration_s=2)
+    if spacer_txt != "" and kind == "question":
+        stream.add_spacer(spacer_txt, duration_s=2)
 
     return stream
 
@@ -69,7 +69,7 @@ def get_sources(question: Dict, media: str, kind: str) -> List[Dict]:
 
 
 def create_video(kind: str, round_id: int, question: Dict, question_id: int, output_dir: Path,
-                 width: int = 1280, height: int = 720, backend: str = 'ffmpeg', add_spacer: bool = False,
+                 width: int = 1280, height: int = 720, backend: str = 'ffmpeg', spacer_txt: str = "",
                  use_cached_video_files: bool = False, is_example: bool = False) -> Path:
     """Creates a video for one question, either a question or an answer video"""
     assert kind in ["question", "answer"]
@@ -102,7 +102,7 @@ def create_video(kind: str, round_id: int, question: Dict, question_id: int, out
     backend_cls = get_backend(backend)
     stream = backend_cls(video_files[0], width=width, height=height)
     stream = filter_stream(stream, kind, round_id, answer_text, question_id, repetitions, interval,
-                           add_spacer=add_spacer, is_example=is_example)
+                           spacer_txt=spacer_txt, is_example=is_example)
     file_name_out = stream.run(file_name, dry_run=not generate_video)
 
     return file_name_out

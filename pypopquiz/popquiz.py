@@ -25,7 +25,7 @@ def popquiz(input_file: Path, output_dir: Path, backend: str) -> None:
     round_id = input_data["round"]
     ppq.io.log("Processing popquiz round {:d}".format(round_id))
 
-    add_spacer = input_data.get('spacers', False)
+    spacer_txt = input_data.get('spacers', '')
     use_cached_video_files = input_data.get('use_cached_video_files', False)
     first_question_is_example = input_data.get('first_question_is_example', False)
 
@@ -40,10 +40,10 @@ def popquiz(input_file: Path, output_dir: Path, backend: str) -> None:
 
         ppq.io.log("Processing question {:d}".format(question_id))
         q_video = ppq.video.create_video("question", round_id, question, question_id, output_dir,
-                                         backend=backend, add_spacer=add_spacer,
+                                         backend=backend, spacer_txt=spacer_txt,
                                          use_cached_video_files=use_cached_video_files, is_example=is_example)
         a_video = ppq.video.create_video("answer", round_id, question, question_id, output_dir,
-                                         backend=backend, add_spacer=add_spacer,
+                                         backend=backend, spacer_txt=spacer_txt,
                                          use_cached_video_files=use_cached_video_files, is_example=is_example)
         q_videos.append(q_video)
         if is_example:
