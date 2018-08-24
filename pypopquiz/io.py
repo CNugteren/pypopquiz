@@ -25,6 +25,11 @@ def get_interval_duration(interval: Tuple[str, str]) -> int:
     return interval_s[1] - interval_s[0]
 
 
+def total_duration(clips: List[Dict]) -> int:
+    """Calculate the total duration of a list of clip specifications."""
+    return sum((get_interval_duration(item["interval"]) for item in clips))
+
+
 def verify_input(input_data: Dict) -> None:
     """Verifies that the input JSON is valid. If not, raises an error indicating the mistake"""
 
@@ -150,13 +155,13 @@ def verify_input(input_data: Dict) -> None:
         if len(question["answers"]) != len(question["answer_video"]):
             raise ValueError("Expected {:d} answers, got {:d}".
                              format(len(question["answer_video"]), len(question["answers"])))
-        question_video_time = sum((get_interval_duration(item["interval"]) for item in question["question_video"]))
-        question_audio_time = sum((get_interval_duration(item["interval"]) for item in question["question_audio"]))
+        question_video_time = total_duration(question["question_video"])
+        question_audio_time = total_duration(question["question_audio"])
         if question_video_time != question_audio_time:
             raise ValueError("Mismatching question audio ({:d}s) and video ({:d}s) runtime".
                              format(question_audio_time, question_video_time))
-        answer_video_time = sum((get_interval_duration(item["interval"]) for item in question["answer_video"]))
-        answer_audio_time = sum((get_interval_duration(item["interval"]) for item in question["answer_audio"]))
+        answer_video_time = total_duration(question["answer_video"])
+        answer_audio_time = total_duration(question["answer_audio"])
         if answer_video_time != answer_audio_time:
             raise ValueError("Mismatching answer audio ({:d}s) and video ({:d}s) runtime".
                              format(answer_audio_time, answer_video_time))
