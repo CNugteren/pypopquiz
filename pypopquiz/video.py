@@ -1,7 +1,7 @@
 """Module with all video related functions, using one of the video backends"""
 
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict, List, Tuple
 
 import pypopquiz as ppq
 import pypopquiz.io
@@ -12,18 +12,11 @@ import pypopquiz.backends.moviepy
 VideoBackend = ppq.backends.backend.Backend
 
 
-def get_interval_in_s(interval: List[str]) -> List[int]:
-    """Converts an interval in string form (e.g. [1:10, 2:30] in seconds, e.g. [70, 150] seconds"""
-    return [int(sec.split(":")[0]) * 60 + int(sec.split(":")[1]) for sec in interval]
-
-
-def filter_stream(stream: VideoBackend, kind: str, round_id: int, question: Dict, question_id: int,
-                  box_height: int = 100, fade_amount_s: int = 3,
+def filter_stream(stream: VideoBackend, kind: str, round_id: int, answer_text: str, question_id: int,
+                  repetitions: int, interval: Tuple[int, int], box_height: int = 100, fade_amount_s: int = 3,
                   spacer_txt: str = "", is_example: bool = False) -> VideoBackend:
     """Adds ffmpeg filters to the stream, producing a separate video and audio stream as a result"""
 
-    repetitions = question[kind].get("repetitions", 1)
-    interval = get_interval_in_s(question[kind]["interval"])
     if interval[1] <= interval[0]:
         raise ValueError("Invalid interval: {:s}".format(str(interval)))
     length_s = interval[1] - interval[0]
@@ -32,7 +25,6 @@ def filter_stream(stream: VideoBackend, kind: str, round_id: int, question: Dict
         question_text = "Example question for round {:d}".format(round_id)
     else:
         question_text = "Question {:d}.{:d}".format(round_id, question_id)
-    answer_text = "{:s} - {:s}".format(question["artist"], question["title"])
 
     stream.trim(start_s=interval[0], end_s=interval[1])
     stream.fade_in_and_out(fade_amount_s, length_s)
@@ -64,13 +56,16 @@ def get_backend(backend: str):
     raise ValueError('Invalid backend {} selected.'.format(backend))
 
 
-def get_video_source(question: Dict, kind: str) -> Dict:
+def get_sources(question: Dict, media: str, kind: str) -> List[Dict]:
     """Returns the dict for the source file for this question or answer."""
+    assert media in ["video", "audio"]
     sources = question["sources"]
-    source_index = question[kind]["source"]
-    if source_index >= len(sources):
-        raise ValueError("Source index {:d} given, but only {:d} source(s) provided".format(source_index, len(sources)))
-    return sources[source_index]
+    source_indices = [sub_question["source"] for sub_question in question[kind + "_" + media]]
+    for source_index in source_indices:
+        if source_index >= len(sources):
+            raise ValueError("Source index {:d} given, but only {:d} source(s) provided".
+                             format(source_index, len(sources)))
+    return [sources[source_index] for source_index in source_indices]
 
 
 def create_video(kind: str, round_id: int, question: Dict, question_id: int, output_dir: Path,
@@ -79,10 +74,13 @@ def create_video(kind: str, round_id: int, question: Dict, question_id: int, out
     """Creates a video for one question, either a question or an answer video"""
     assert kind in ["question", "answer"]
 
-    video_source = get_video_source(question, kind)
-    video_file = output_dir / ppq.io.get_video_file_name(video_source)
-    if not video_file.exists():
-        raise FileNotFoundError("Video file '{:s}' doesn't exist".format(str(video_file)))
+    video_sources = get_sources(question, "video", kind)
+    audio_sources = get_sources(question, "audio", kind)
+    video_files = [output_dir / ppq.io.get_source_file_name(video_source) for video_source in video_sources]
+    audio_files = [output_dir / ppq.io.get_source_file_name(audio_source) for audio_source in audio_sources]
+    for media_file in video_files + audio_files:
+        if not media_file.exists():
+            raise FileNotFoundError("Video/audio file '{:s}' doesn't exist".format(str(media_file)))
 
     # Force output file to be a video
     target_format = 'mp4'
@@ -95,9 +93,16 @@ def create_video(kind: str, round_id: int, question: Dict, question_id: int, out
         else:
             file_name.unlink()  # deletes a previous version
 
+    # TODO: Handle multiple audio and video files in the backends
+    media_info = question[kind+"_video"][0]
+    repetitions = media_info.get("repetitions", 1)
+    interval = ppq.io.get_interval_in_s(media_info["interval"])
+    answer_text = " - ".join(question["answers"][0].values())
+
     backend_cls = get_backend(backend)
-    stream = backend_cls(video_file, width=width, height=height)
-    stream = filter_stream(stream, kind, round_id, question, question_id, spacer_txt=spacer_txt, is_example=is_example)
+    stream = backend_cls(video_files[0], width=width, height=height)
+    stream = filter_stream(stream, kind, round_id, answer_text, question_id, repetitions, interval,
+                           spacer_txt=spacer_txt, is_example=is_example)
     file_name_out = stream.run(file_name, dry_run=not generate_video)
 
     return file_name_out

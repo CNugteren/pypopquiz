@@ -19,15 +19,25 @@ def create_sheets(kind: str, input_data: Dict, output_dir: Path, table_width: in
     contents.append("")
 
     # The table header
-    contents.append("| {:10s} | {:40s} | {:40s} |".format("Question", "Artist", "Title"))
-    contents.append("|-{:10s}-|-{:40s}-|-{:40s}-|".format("-" * 10, "-" * table_width, "-" * table_width))
+    header = "| {:10s} |".format("Question")
+    spacer = "|-{:10s}-|".format("-" * 10)
+    for questioned in input_data["questioned"]:
+        header += " {:40s} |".format(questioned)
+        spacer += "-{:40s}-|".format("-" * table_width)
+    contents.append(header)
+    contents.append(spacer)
 
     # The table contents
     for index, question in enumerate(input_data["questions"]):
-        field1 = question["artist"] if kind == "answer" else ""
-        field2 = question["title"] if kind == "answer" else ""
         question_id = "{:d}.{:d}".format(input_data["round"], index + 1)
-        contents.append("| {:10s} | {:40s} | {:40s} |".format(question_id, field1, field2))
+        table_line = ("| {:10s} |".format(question_id))
+        for questioned in input_data["questioned"]:
+            field = ""
+            for sub_question in question["answers"]:
+                if kind == "answer" and questioned in sub_question:
+                    field = sub_question[questioned]
+            table_line += " {:40s} |".format(field)
+        contents.append(table_line)
 
     # Output to disk as Markdown
     file_name = output_dir / ("{:02d}_{:s}.md".format(input_data["round"], kind))

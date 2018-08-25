@@ -3,25 +3,32 @@
   "theme": "Advanced features demo",
   "use_cached_video_files": true,
   "background_image": "background.png",
+  "questioned": ["artist clip", "title clip", "artist song", "title song"],
   "first_question_is_example": true,
   "questions": [
     {
-      "artist": "The Wombats",
-      "title": "Tokyo (Vampires & Wolves)",
       "sources": [
-        {"source": "youtube", "url": "DRhUIJextp8", "format": "mp4"}
+        {"source": "youtube", "identifier": "DRhUIJextp8", "format": "mp4"},
+        {"source": "youtube", "identifier": "PDKKeLhHgl8", "format": "mp4"}
       ],
-      "question": {"source": 0, "interval": ["1:21", "1:31"], "video": true, "audio": true, "repetitions": 1},
-      "answer": {"source": 0, "interval": ["1:37", "1:43"], "video": true, "audio": true, "repetitions": 1}
-    },
-    {
-      "artist": "The Animals",
-      "title": "House of the Rising Sun",
-      "sources": [
-        {"source": "youtube", "url": "PDKKeLhHgl8", "format": "mp4"}
+      "question_video": [
+        {"source": 0, "interval": ["1:21", "1:32"], "repetitions": 2}
       ],
-      "question": {"source": 0, "interval": ["0:45", "0:57"], "video": true, "audio": true, "repetitions": 1},
-      "answer": {"source": 0, "interval": ["0:08", "0:20"], "video": true, "audio": true, "repetitions": 1}
+      "question_audio": [
+        {"source": 1, "interval": ["0:45", "0:56"], "repetitions": 2}
+      ],
+      "answer_video": [
+        {"source": 0, "interval": ["1:37", "1:43"], "repetitions": 1},
+        {"source": 1, "interval": ["0:08", "0:20"], "repetitions": 1}
+      ],
+      "answer_audio": [
+        {"source": 0, "interval": ["1:37", "1:43"], "repetitions": 1},
+        {"source": 1, "interval": ["0:08", "0:20"], "repetitions": 1}
+      ],
+      "answers": [
+        {"artist clip": "The Wombats", "title clip": "Tokyo (Vampires & Wolves)"},
+        {"artist song": "The Animals", "title song": "House of the Rising Sun"}
+      ]
     }
   ]
 }
