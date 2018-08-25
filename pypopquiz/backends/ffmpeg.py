@@ -13,44 +13,57 @@ import pypopquiz.io
 class FFMpeg(ppq.backends.backend.Backend):
     """FFMPEG backend, implements interface from base-class"""
 
-    def __init__(self, source_file: Path, display_graph: bool = False, width: int = 1280, height: int = 720) -> None:
-        super().__init__(width, height)
+    def __init__(self, source_file: Path, has_video: bool, has_audio: bool,
+                 display_graph: bool = False, width: int = 1280, height: int = 720) -> None:
+        super().__init__(has_video, has_audio, width, height)
         stream = ffmpeg.input(str(source_file))
         self.display_graph = display_graph
-        self.stream_v = stream["v"]
-        self.stream_a = stream["a"]
+        self.stream_v = stream["v"] if self.has_video else None
+        self.stream_a = stream["a"] if self.has_audio else None
         self.version = ffmpeg_version()
 
     def trim(self, start_s: int, end_s: int) -> None:
-        """Trims a video to a given start and end time measured in seconds"""
-        self.stream_v = self.stream_v.trim(start=start_s, end=end_s).filter("setpts", "PTS-STARTPTS")
-        self.stream_a = self.stream_a.filter("atrim", start=start_s, end=end_s).filter("asetpts", "PTS-STARTPTS")
+        """Trims a stream to a given start and end time measured in seconds"""
+        if self.has_video:
+            self.stream_v = self.stream_v.trim(start=start_s, end=end_s).filter("setpts", "PTS-STARTPTS")
+        if self.has_audio:
+            self.stream_a = self.stream_a.filter("atrim", start=start_s, end=end_s).filter("asetpts", "PTS-STARTPTS")
 
     def repeat(self) -> None:
-        """Concatenates a video and audio stream with itself to make a twice as long video"""
-        stream_v = self.stream_v.split()
-        stream_a = self.stream_a.asplit()
-        joined = ffmpeg.concat(stream_v[0].filter("fifo"), stream_a[0].filter("afifo"),
-                               stream_v[1].filter("fifo"), stream_a[1].filter("afifo"), v=1, a=1).node
-        self.stream_v, self.stream_a = joined[0], joined[1]
+        """Concatenates streams with itself to make a twice as long stream"""
+        if self.has_video:
+            stream_v = self.stream_v.split()
+            joined = ffmpeg.concat(stream_v[0].filter("fifo"), stream_v[1].filter("fifo"), v=1, a=0).node
+            self.stream_v = joined[0]
+        if self.has_audio:
+            stream_a = self.stream_a.asplit()
+            joined = ffmpeg.concat(stream_a[0].filter("afifo"), stream_a[1].filter("afifo"), v=0, a=1).node
+            self.stream_a = joined[0]
 
     def combine(self, other: 'FFMpeg') -> None:  # type: ignore
-        """Combines this video stream with another stream"""
-        joined = ffmpeg.concat(self.stream_v.filter("fifo"), self.stream_a.filter("afifo"),
-                               other.stream_v.filter("fifo"), other.stream_a.filter("afifo"), v=1, a=1).node
-        self.stream_v, self.stream_a = joined[0], joined[1]
+        """Combines this stream with another stream"""
+        if self.has_video:
+            joined = ffmpeg.concat(self.stream_v.filter("fifo"), other.stream_v.filter("fifo"), v=1, a=0).node
+            self.stream_v = joined[0]
+        if self.has_audio:
+            joined = ffmpeg.concat(self.stream_a.filter("afifo"), other.stream_a.filter("afifo"), v=0, a=1).node
+            self.stream_a = joined[0]
 
     def fade_in_and_out(self, duration_s: int, video_length_s: int) -> None:
         """Adds a fade-in and fade-out to/from black for the audio and video stream"""
-        stream_v = self.stream_v.filter("fade", type="in", start_time=0, duration=duration_s)
-        self.stream_v = stream_v.filter("fade", type="out", start_time=video_length_s - duration_s,
-                                        duration=duration_s)
-        stream_a = self.stream_a.filter("afade", type="in", start_time=0, duration=duration_s)
-        self.stream_a = stream_a.filter("afade", type="out", start_time=video_length_s - duration_s,
-                                        duration=duration_s)
+        if self.has_video:
+            stream_v = self.stream_v.filter("fade", type="in", start_time=0, duration=duration_s)
+            self.stream_v = stream_v.filter("fade", type="out", start_time=video_length_s - duration_s,
+                                            duration=duration_s)
+        if self.has_audio:
+            stream_a = self.stream_a.filter("afade", type="in", start_time=0, duration=duration_s)
+            self.stream_a = stream_a.filter("afade", type="out", start_time=video_length_s - duration_s,
+                                            duration=duration_s)
 
     def scale_video(self) -> None:
         """Scales the video and pads if necessary to the requested dimensions"""
+        if not self.has_video:
+            return
         width = self.width
         height = self.height
         stream_v = self.stream_v.filter("scale", width=width, height=height, force_original_aspect_ratio=1)
@@ -58,6 +71,8 @@ class FFMpeg(ppq.backends.backend.Backend):
 
     def draw_text_in_box(self, video_text: str, length: int, box_height: int, move: bool, top: bool) -> None:
         """Draws a semi-transparent box either at the top or bottom and writes text in it, optionally scrolling by"""
+        if not self.has_video:
+            return
         width = self.width
         height = self.height
         y_location = 0 if top else height - box_height
@@ -70,10 +85,21 @@ class FFMpeg(ppq.backends.backend.Backend):
         self.stream_v = stream_v.drawtext(text=video_text, fontcolor="white", fontsize=50,
                                           x=x_location_text, y=y_location_text)
 
+    def add_audio(self, other: 'FFMpeg') -> None:  # type: ignore
+        """Adds audio to this video clip from another source"""
+        assert self.has_video and other.has_audio
+        self.stream_a = other.stream_a
+        self.has_audio = True
+
     def run(self, file_name: Path, dry_run: bool = False) -> Path:
         """Runs the ffmpeg command to create the video, applying all the filters"""
         with FFMpeg.tmp_intermediate_file(file_name) as tmp_out:
-            output_stream = ffmpeg.output(self.stream_v, self.stream_a, str(tmp_out))
+            streams = []
+            if self.has_video:
+                streams.append(self.stream_v)
+            if self.has_audio:
+                streams.append(self.stream_a)
+            output_stream = ffmpeg.output(*streams, str(tmp_out))
             if self.display_graph:
                 output_stream.view(filename="ffmpeg_graph")  # optional visualisation of the graph
             if not dry_run:

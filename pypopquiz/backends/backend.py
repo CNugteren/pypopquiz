@@ -11,26 +11,28 @@ import pypopquiz as ppq
 import pypopquiz.io
 
 
-
 class Backend(abc.ABC):
     """Abstract class to specify the backend interface"""
 
-    def __init__(self, width: int = 1280, height: int = 720) -> None:
+    def __init__(self, has_video: bool, has_audio: bool, width: int = 1280, height: int = 720) -> None:
+        self.has_video = has_video
+        self.has_audio = has_audio
         self.width = width
         self.height = height
 
     @abc.abstractmethod
     def trim(self, start_s: int, end_s: int) -> None:
-        """Trims a video to a given start and end time measured in seconds"""
+        """Trims a stream to a given start and end time measured in seconds"""
         pass
 
     @abc.abstractmethod
     def repeat(self) -> None:
-        """Concatenates a video and audio stream with itself to make a twice as long video"""
+        """Concatenates streams with itself to make a twice as long stream"""
         pass
 
+    @abc.abstractmethod
     def combine(self, other: 'Backend') -> None:
-        """Combines this video stream with another stream"""
+        """Combines this stream with another stream"""
         pass
 
     @abc.abstractmethod
@@ -49,12 +51,20 @@ class Backend(abc.ABC):
         pass
 
     @abc.abstractmethod
+    def add_audio(self, other: 'FFMpeg') -> None:  # type: ignore
+        """Adds audio to this video clip from another source"""
+
+    @abc.abstractmethod
     def run(self, file_name: Path, dry_run: bool = False) -> Path:
         """Runs the backend to create the video, applying all the filters"""
         pass
 
     def add_spacer(self, text: str, duration_s: float) -> None:
-        """Add a text spacer to the start of the clip."""
+        """Add a text spacer to the start of the video clip."""
+        pass
+
+    def add_silence(self, duration_s: float) -> None:
+        """Add a silence of a certain duration the an audio clip."""
         pass
 
     @staticmethod
