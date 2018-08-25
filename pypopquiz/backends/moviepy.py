@@ -14,8 +14,10 @@ import pypopquiz.backends.backend
 class Moviepy(pypopquiz.backends.backend.Backend):
     """Moviepy backend."""
 
-    def __init__(self, source_file: Path, width: int = 1280, height: int = 720) -> None:
-        super().__init__(width, height)
+    def __init__(self, source_file: Path, has_video: bool, has_audio: bool,
+                 width: int = 1280, height: int = 720) -> None:
+        super().__init__(has_video, has_audio, width, height)
+        # TODO: Use the self.has_video and self.has_audio arguments to switch on/off audio/video
         if source_file.suffix in ('.mp3', '.wav', ):
             # Create a black clip with the audio file pasted on top
             audio = moviepy.editor.AudioFileClip(str(source_file))
@@ -111,6 +113,12 @@ class Moviepy(pypopquiz.backends.backend.Backend):
             color, text, duration_s, self.height, box_height=100, move=True, top=False, on_box=False
         )
         self.video = moviepy.editor.concatenate_videoclips([spacer, self.video])
+
+    def add_audio(self, other: 'FFMpeg') -> None:  # type: ignore
+        """Adds audio to this video clip from another source"""
+        assert self.has_video and other.has_audio
+        # TODO: Fill in
+        self.has_audio = True
 
     def run(self, file_name: Path, dry_run: bool = False) -> Path:
         """Runs the backend to create the video, applying all the filters"""
