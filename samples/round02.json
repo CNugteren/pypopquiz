@@ -20,6 +20,21 @@
         {"artist clip": "The Wombats", "title clip": "Tokyo (Vampires & Wolves)"},
         {"artist song": "The Animals", "title song": "House of the Rising Sun"}
       ]
+    },
+    {
+      "sources": [
+        {"source": "youtube", "identifier": "QGJuMBdaqIw", "format": "mp4"},
+        {"source": "youtube", "identifier": "cuDDPF6vE6Y", "format": "mp4"}
+      ],
+      "question_video": [{"source": 0, "interval": ["0:46", "1:12"]}],
+      "question_audio": [{"source": 1, "interval": ["0:32", "0:58"]}],
+      "repetitions": 1,
+      "answer_video": [{"source": 0, "interval": ["1:15", "1:30"]}, {"source": 1, "interval": ["0:58", "1:18"]}],
+      "answer_audio": [{"source": 0, "interval": ["1:15", "1:30"]}, {"source": 1, "interval": ["0:58", "1:18"]}],
+      "answers": [
+        {"artist clip": "Katy Perry", "title clip": "Firework"},
+        {"artist song": "Enya", "title song": "Trains And Winter Rains"}
+      ]
     }
   ]
 }
