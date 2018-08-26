@@ -44,7 +44,7 @@ def popquiz(input_file: Path, output_dir: Path, backend: str) -> None:
             answer_texts.append(" - ".join([answers[question_text]
                                             for question_text in questioned if question_text in answers]))
 
-        ppq.io.log("Processing question {:d} {:s}".format(question_id, answer_texts))
+        ppq.io.log("Processing question {:d} {:s}".format(question_id, str(answer_texts)))
         q_video = ppq.video.create_video("question", round_id, question, question_id, output_dir, answer_texts,
                                          backend=backend, spacer_txt=spacer_txt,
                                          use_cached_video_files=use_cached_video_files, is_example=is_example)
