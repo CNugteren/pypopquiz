@@ -86,8 +86,7 @@ def verify_input(input_data: Dict) -> None:
                                 "additionalProperties": True,
                                 "properties": {
                                     "source": {"type": "number"},
-                                    "interval": {"type": "array"},
-                                    "repetitions": {"type": "number"},
+                                    "interval": {"type": "array"}
                                 }
                             }
                         },
@@ -101,11 +100,11 @@ def verify_input(input_data: Dict) -> None:
                                 "additionalProperties": True,
                                 "properties": {
                                     "source": {"type": "number"},
-                                    "interval": {"type": "array"},
-                                    "repetitions": {"type": "number"},
+                                    "interval": {"type": "array"}
                                 }
                             }
                         },
+                        "repetitions": {"type": "number"},
                         "answer_video": {
                             "type": "array",
                             "minItems": 1,
@@ -116,8 +115,7 @@ def verify_input(input_data: Dict) -> None:
                                 "additionalProperties": True,
                                 "properties": {
                                     "source": {"type": "number"},
-                                    "interval": {"type": "array"},
-                                    "repetitions": {"type": "number"},
+                                    "interval": {"type": "array"}
                                 }
                             }
                         },
@@ -131,8 +129,7 @@ def verify_input(input_data: Dict) -> None:
                                 "additionalProperties": True,
                                 "properties": {
                                     "source": {"type": "number"},
-                                    "interval": {"type": "array"},
-                                    "repetitions": {"type": "number"},
+                                    "interval": {"type": "array"}
                                 }
                             }
                         },

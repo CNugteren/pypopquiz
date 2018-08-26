@@ -30,26 +30,29 @@ def get_interval_length(interval: Tuple[int, int]) -> int:
     return interval[1] - interval[0]
 
 
-def filter_stream_video(stream: VideoBackend, interval: Tuple[int, int], fade_amount_s: int = 3) -> VideoBackend:
+def filter_stream_video(stream: VideoBackend, kind: str, interval: Tuple[int, int], answer_text: str,
+                        box_height: int = 100, fade_amount_s: int = 3) -> VideoBackend:
     """Adds ffmpeg filters to the stream, processing a single video stream"""
     stream.trim(start_s=interval[0], end_s=interval[1])
     stream.fade_in_and_out(fade_amount_s, get_interval_length(interval))
     stream.scale_video()
+    if kind == "answer":
+        stream.draw_text_in_box(answer_text, get_interval_length(interval), box_height, move=False, top=True)
     return stream
 
 
-def filter_stream_videos(stream: VideoBackend, kind: str, round_id: int, answer_text: str, question_id: int,
+def filter_stream_videos(stream: VideoBackend, kind: str, round_id: int, question_id: int,
                          repetitions: int, total_duration: int, box_height: int = 100,
                          spacer_txt: str = "", is_example: bool = False) -> VideoBackend:
     """Adds ffmpeg filters to the stream, processing the combined video stream"""
     if is_example:
-        question_text = "Example question for round {:d}".format(round_id)
+        question_text = "Example {:s} for round {:d}".format(kind, round_id)
     else:
         question_text = "Question {:d}.{:d}".format(round_id, question_id)
+    if repetitions > 1:
+        question_text += " ({:d}x)".format(repetitions)
 
     stream.draw_text_in_box(question_text, total_duration, box_height, move=True, top=False)
-    if kind == "answer":
-        stream.draw_text_in_box(answer_text, total_duration, box_height, move=False, top=True)
     repeat_stream(stream, repetitions)
     if spacer_txt != "" and kind == "question":
         stream.add_spacer(spacer_txt, duration_s=2)
@@ -92,12 +95,14 @@ def get_sources(question: Dict, media: str, kind: str) -> List[Dict]:
     return [sources[source_index] for source_index in source_indices]
 
 
-def create_video(kind: str, round_id: int, question: Dict, question_id: int, output_dir: Path,
+def create_video(kind: str, round_id: int, question: Dict, question_id: int, output_dir: Path, answer_texts: List[str],
                  width: int = 1280, height: int = 720, backend: str = 'ffmpeg', spacer_txt: str = "",
                  use_cached_video_files: bool = False, is_example: bool = False) -> Path:
     """Creates a video for one question, either a question or an answer video"""
     # pylint: disable=too-many-locals
     assert kind in ["question", "answer"]
+
+    repetitions = question.get("repetitions", 1) if kind == "question" else 1  # don't repeat the answer multiple times
 
     video_sources = get_sources(question, "video", kind)
     audio_sources = get_sources(question, "audio", kind)
@@ -122,27 +127,24 @@ def create_video(kind: str, round_id: int, question: Dict, question_id: int, out
 
     # Process the video(s)
     stream_videos = None
-    repetitions = question[kind+"_video"][0].get("repetitions", 1)  # TODO: change JSON input to support only one rep.
-    answer_text = " - ".join(question["answers"][0].values())  # TODO: Support multiple answer texts
     total_duration = 0
     for video_id, video_info in enumerate(question[kind+"_video"]):
         ppq.io.log("Processing video input {:d}/{:d}".format(video_id + 1, len(question[kind+"_video"])))
         interval = ppq.io.get_interval_in_s(video_info["interval"])
         total_duration += get_interval_length(interval)
         stream_video = backend_cls(video_files[video_id], has_video=True, has_audio=False, width=width, height=height)
-        stream_video = filter_stream_video(stream_video, interval)
+        stream_video = filter_stream_video(stream_video, kind, interval, answer_texts[video_id])
         if stream_videos is None:
             stream_videos = stream_video
         else:
             stream_videos.combine(stream_video)
     ppq.io.log("Processing final video")
     assert stream_videos is not None
-    stream_videos = filter_stream_videos(stream_videos, kind, round_id, answer_text, question_id, repetitions,
+    stream_videos = filter_stream_videos(stream_videos, kind, round_id, question_id, repetitions,
                                          total_duration, spacer_txt=spacer_txt, is_example=is_example)
 
     # Process the audio(s)
     stream_audios = None
-    repetitions = question[kind+"_audio"][0].get("repetitions", 1)  # TODO: change JSON input to support only one rep.
     for audio_id, audio_info in enumerate(question[kind+"_audio"]):
         ppq.io.log("Processing audio input {:d}/{:d}".format(audio_id + 1, len(question[kind+"_audio"])))
         interval = ppq.io.get_interval_in_s(audio_info["interval"])
