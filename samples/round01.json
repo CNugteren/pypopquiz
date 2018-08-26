@@ -2,26 +2,28 @@
   "round": 1,
   "theme": "Intro's",
   "questioned": ["artist", "title"],
-  "use_cached_video_files": true,
+  "use_cached_video_files": false,
   "questions": [
     {
       "sources": [
         {"source": "youtube", "identifier": "v2AC41dglnM", "format": "mp4"}
       ],
-      "question_video": [{"source": 0, "interval": ["0:00", "0:10"], "repetitions": 1}],
-      "question_audio": [{"source": 0, "interval": ["0:00", "0:10"], "repetitions": 1}],
-      "answer_video": [{"source": 0, "interval": ["2:40", "2:56"], "repetitions": 1}],
-      "answer_audio": [{"source": 0, "interval": ["2:40", "2:56"], "repetitions": 1}],
+      "question_video": [{"source": 0, "interval": ["0:00", "0:10"]}],
+      "question_audio": [{"source": 0, "interval": ["0:00", "0:10"]}],
+      "repetitions": 1,
+      "answer_video": [{"source": 0, "interval": ["2:40", "2:56"]}],
+      "answer_audio": [{"source": 0, "interval": ["2:40", "2:56"]}],
       "answers": [{"artist": "AC/DC", "title": "Thunderstruck"}]
     },
     {
       "sources": [
         {"source": "youtube", "identifier": "8mGBaXPlri8", "format": "mp4"}
       ],
-      "question_video": [{"source": 0, "interval": ["0:14", "0:22"], "repetitions": 1}],
-      "question_audio": [{"source": 0, "interval": ["0:14", "0:22"], "repetitions": 1}],
-      "answer_video": [{"source": 0, "interval": ["1:08", "1:27"], "repetitions": 1}],
-      "answer_audio": [{"source": 0, "interval": ["1:08", "1:27"], "repetitions": 1}],
+      "question_video": [{"source": 0, "interval": ["0:14", "0:22"]}],
+      "question_audio": [{"source": 0, "interval": ["0:14", "0:22"]}],
+      "repetitions": 1,
+      "answer_video": [{"source": 0, "interval": ["1:08", "1:27"]}],
+      "answer_audio": [{"source": 0, "interval": ["1:08", "1:27"]}],
       "answers": [{"artist": "All The Things She Said", "title": "t.A.T.u."}]
     }
   ]

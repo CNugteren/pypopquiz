@@ -43,9 +43,11 @@ def filter_stream_videos(stream: VideoBackend, kind: str, round_id: int, answer_
                          spacer_txt: str = "", is_example: bool = False) -> VideoBackend:
     """Adds ffmpeg filters to the stream, processing the combined video stream"""
     if is_example:
-        question_text = "Example question for round {:d}".format(round_id)
+        question_text = "Example {:s} for round {:d}".format(kind, round_id)
     else:
         question_text = "Question {:d}.{:d}".format(round_id, question_id)
+    if repetitions > 1:
+        question_text += " ({:d}x)".format(repetitions)
 
     stream.draw_text_in_box(question_text, total_duration, box_height, move=True, top=False)
     if kind == "answer":
@@ -99,6 +101,8 @@ def create_video(kind: str, round_id: int, question: Dict, question_id: int, out
     # pylint: disable=too-many-locals
     assert kind in ["question", "answer"]
 
+    repetitions = question.get("repetitions", 1) if kind == "question" else 1  # don't repeat the answer multiple times
+
     video_sources = get_sources(question, "video", kind)
     audio_sources = get_sources(question, "audio", kind)
     video_files = [output_dir / ppq.io.get_source_file_name(video_source) for video_source in video_sources]
@@ -122,7 +126,6 @@ def create_video(kind: str, round_id: int, question: Dict, question_id: int, out
 
     # Process the video(s)
     stream_videos = None
-    repetitions = question[kind+"_video"][0].get("repetitions", 1)  # TODO: change JSON input to support only one rep.
     answer_text = " - ".join(question["answers"][0].values())  # TODO: Support multiple answer texts
     total_duration = 0
     for video_id, video_info in enumerate(question[kind+"_video"]):
@@ -142,7 +145,6 @@ def create_video(kind: str, round_id: int, question: Dict, question_id: int, out
 
     # Process the audio(s)
     stream_audios = None
-    repetitions = question[kind+"_audio"][0].get("repetitions", 1)  # TODO: change JSON input to support only one rep.
     for audio_id, audio_info in enumerate(question[kind+"_audio"]):
         ppq.io.log("Processing audio input {:d}/{:d}".format(audio_id + 1, len(question[kind+"_audio"])))
         interval = ppq.io.get_interval_in_s(audio_info["interval"])
