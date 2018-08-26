@@ -23,6 +23,7 @@ def popquiz(input_file: Path, output_dir: Path, backend: str) -> None:
 
     input_data = ppq.io.read_input(input_file)
     round_id = input_data["round"]
+    questioned = input_data["questioned"]
     ppq.io.log("Processing popquiz round {:d}".format(round_id))
 
     spacer_txt = input_data.get('spacers', '')
@@ -38,11 +39,16 @@ def popquiz(input_file: Path, output_dir: Path, backend: str) -> None:
         question_id = index + int(not first_question_is_example)  # start with 0 when having an example
         is_example = first_question_is_example and index == 0
 
-        ppq.io.log("Processing question {:d}".format(question_id))
-        q_video = ppq.video.create_video("question", round_id, question, question_id, output_dir,
+        answer_texts = []
+        for answers in question["answers"]:
+            answer_texts.append(" - ".join([answers[question_text]
+                                            for question_text in questioned if question_text in answers]))
+
+        ppq.io.log("Processing question {:d} {:s}".format(question_id, answer_texts))
+        q_video = ppq.video.create_video("question", round_id, question, question_id, output_dir, answer_texts,
                                          backend=backend, spacer_txt=spacer_txt,
                                          use_cached_video_files=use_cached_video_files, is_example=is_example)
-        a_video = ppq.video.create_video("answer", round_id, question, question_id, output_dir,
+        a_video = ppq.video.create_video("answer", round_id, question, question_id, output_dir, answer_texts,
                                          backend=backend, spacer_txt=spacer_txt,
                                          use_cached_video_files=use_cached_video_files, is_example=is_example)
         q_videos.append(q_video)
