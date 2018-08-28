@@ -1,0 +1,33 @@
+{
+  "round": 3,
+  "theme": "Reverse",
+  "questioned": ["artist", "title"],
+  "first_question_is_example": true,
+  "use_cached_video_files": false,
+  "questions": [
+    {
+      "sources": [{"source": "youtube", "identifier": "9dcVOmEQzKA", "format": "mp4"}],
+      "question_video": [{"source": 0, "interval": ["1:06", "1:28"], "reverse": true}],
+      "question_audio": [{"source": 0, "interval": ["1:06", "1:28"], "reverse": true}],
+      "answer_video": [{"source": 0, "interval": ["1:06", "1:28"]}],
+      "answer_audio": [{"source": 0, "interval": ["1:06", "1:28"]}],
+      "answers": [{"artist": "Eminem", "title": "Just Lose It"}]
+    },
+    {
+      "sources": [{"source": "youtube", "identifier": "rn_YodiJO6k", "format": "mp4"}],
+      "question_video": [{"source": 0, "interval": ["1:59", "2:26"], "reverse": true}],
+      "question_audio": [{"source": 0, "interval": ["1:59", "2:26"], "reverse": true}],
+      "answer_video": [{"source": 0, "interval": ["1:59", "2:26"]}],
+      "answer_audio": [{"source": 0, "interval": ["1:59", "2:26"]}],
+      "answers": [{"artist": "Red Hot Chili Peppers", "title": "Otherside"}]
+    },
+    {
+      "sources": [{"source": "youtube", "identifier": "SwYN7mTi6HM", "format": "mp4"}],
+      "question_video": [{"source": 0, "interval": ["1:12", "1:28"], "reverse": true}],
+      "question_audio": [{"source": 0, "interval": ["1:12", "1:28"], "reverse": true}],
+      "answer_video": [{"source": 0, "interval": ["1:12", "1:28"]}],
+      "answer_audio": [{"source": 0, "interval": ["1:12", "1:28"]}],
+      "answers": [{"artist": "Van Halen", "title": "Jump"}]
+    }
+  ]
+}
