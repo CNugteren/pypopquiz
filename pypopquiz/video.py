@@ -30,10 +30,12 @@ def get_interval_length(interval: Tuple[int, int]) -> int:
     return interval[1] - interval[0]
 
 
-def filter_stream_video(stream: VideoBackend, kind: str, interval: Tuple[int, int], answer_text: str,
+def filter_stream_video(stream: VideoBackend, kind: str, interval: Tuple[int, int], answer_text: str, reverse: bool,
                         box_height: int = 100, fade_amount_s: int = 3) -> VideoBackend:
     """Adds ffmpeg filters to the stream, processing a single video stream"""
     stream.trim(start_s=interval[0], end_s=interval[1])
+    if reverse:
+        stream.reverse()
     stream.fade_in_and_out(fade_amount_s, get_interval_length(interval))
     stream.scale_video()
     if kind == "answer":
@@ -59,9 +61,12 @@ def filter_stream_videos(stream: VideoBackend, kind: str, round_id: int, questio
     return stream
 
 
-def filter_stream_audio(stream: VideoBackend, interval: Tuple[int, int], fade_amount_s: int = 3) -> VideoBackend:
+def filter_stream_audio(stream: VideoBackend, interval: Tuple[int, int], reverse: bool,
+                        fade_amount_s: int = 3) -> VideoBackend:
     """Adds ffmpeg filters to the stream, producing a single audio stream"""
     stream.trim(start_s=interval[0], end_s=interval[1])
+    if reverse:
+        stream.reverse()
     stream.fade_in_and_out(fade_amount_s, get_interval_length(interval))
     return stream
 
@@ -132,8 +137,9 @@ def create_video(kind: str, round_id: int, question: Dict, question_id: int, out
         ppq.io.log("Processing video input {:d}/{:d}".format(video_id + 1, len(question[kind+"_video"])))
         interval = ppq.io.get_interval_in_s(video_info["interval"])
         total_duration += get_interval_length(interval)
+        reverse = video_info.get("reverse", False)
         stream_video = backend_cls(video_files[video_id], has_video=True, has_audio=False, width=width, height=height)
-        stream_video = filter_stream_video(stream_video, kind, interval, answer_texts[video_id])
+        stream_video = filter_stream_video(stream_video, kind, interval, answer_texts[video_id], reverse)
         if stream_videos is None:
             stream_videos = stream_video
         else:
@@ -148,8 +154,9 @@ def create_video(kind: str, round_id: int, question: Dict, question_id: int, out
     for audio_id, audio_info in enumerate(question[kind+"_audio"]):
         ppq.io.log("Processing audio input {:d}/{:d}".format(audio_id + 1, len(question[kind+"_audio"])))
         interval = ppq.io.get_interval_in_s(audio_info["interval"])
+        reverse = video_info.get("reverse", False)
         stream_audio = backend_cls(audio_files[audio_id], has_video=False, has_audio=True, width=width, height=height)
-        stream_audio = filter_stream_audio(stream_audio, interval)
+        stream_audio = filter_stream_audio(stream_audio, interval, reverse)
         if stream_audios is None:
             stream_audios = stream_audio
         else:

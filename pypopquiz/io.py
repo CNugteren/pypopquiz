@@ -86,7 +86,8 @@ def verify_input(input_data: Dict) -> None:
                                 "additionalProperties": True,
                                 "properties": {
                                     "source": {"type": "number"},
-                                    "interval": {"type": "array"}
+                                    "interval": {"type": "array"},
+                                    "reverse": {"type": "boolean"}
                                 }
                             }
                         },
@@ -100,7 +101,8 @@ def verify_input(input_data: Dict) -> None:
                                 "additionalProperties": True,
                                 "properties": {
                                     "source": {"type": "number"},
-                                    "interval": {"type": "array"}
+                                    "interval": {"type": "array"},
+                                    "reverse": {"type": "boolean"}
                                 }
                             }
                         },
@@ -115,7 +117,8 @@ def verify_input(input_data: Dict) -> None:
                                 "additionalProperties": True,
                                 "properties": {
                                     "source": {"type": "number"},
-                                    "interval": {"type": "array"}
+                                    "interval": {"type": "array"},
+                                    "reverse": {"type": "boolean"}
                                 }
                             }
                         },
@@ -129,7 +132,8 @@ def verify_input(input_data: Dict) -> None:
                                 "additionalProperties": True,
                                 "properties": {
                                     "source": {"type": "number"},
-                                    "interval": {"type": "array"}
+                                    "interval": {"type": "array"},
+                                    "reverse": {"type": "boolean"}
                                 }
                             }
                         },
