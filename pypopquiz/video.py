@@ -154,7 +154,7 @@ def create_video(kind: str, round_id: int, question: Dict, question_id: int, out
     for audio_id, audio_info in enumerate(question[kind+"_audio"]):
         ppq.io.log("Processing audio input {:d}/{:d}".format(audio_id + 1, len(question[kind+"_audio"])))
         interval = ppq.io.get_interval_in_s(audio_info["interval"])
-        reverse = video_info.get("reverse", False)
+        reverse = audio_info.get("reverse", False)
         stream_audio = backend_cls(audio_files[audio_id], has_video=False, has_audio=True, width=width, height=height)
         stream_audio = filter_stream_audio(stream_audio, interval, reverse)
         if stream_audios is None:
