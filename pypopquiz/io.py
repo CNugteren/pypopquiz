@@ -212,9 +212,9 @@ def get_source(source_data: Dict[str, str], output_dir: Path, input_dir: Path) -
         log("Downloading video '{:s}' from Youtube...".format(source_url))
         video = YouTube("https://www.youtube.com/watch?v={:s}".format(source_url))
         video = video.streams.filter(subtype=source_data["format"]).first()
-        video.download(output_path=str(output_dir), filename=source_url)
+        video.download(output_path=str(output_dir / SOURCES_BASE_FOLDER), filename=source_url)
     elif source_type == "local":
         input_file = input_dir / get_source_file_name(source_data)
-        input_file.rename(output_file)
+        input_file.rename(output_dir / SOURCES_BASE_FOLDER)
     else:
         raise KeyError("Unsupported source(s) '{:s}'".format(source_type))
