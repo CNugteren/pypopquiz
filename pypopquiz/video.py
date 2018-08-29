@@ -104,7 +104,7 @@ def create_video(kind: str, round_id: int, question: Dict, question_id: int, out
                  width: int = 1280, height: int = 720, backend: str = 'ffmpeg', spacer_txt: str = "",
                  use_cached_video_files: bool = False, is_example: bool = False) -> Path:
     """Creates a video for one question, either a question or an answer video"""
-    # pylint: disable=too-many-locals
+    # pylint: disable=too-many-locals,too-many-statements
     assert kind in ["question", "answer"]
 
     repetitions = question.get("repetitions", 1) if kind == "question" else 1  # don't repeat the answer multiple times
@@ -119,7 +119,10 @@ def create_video(kind: str, round_id: int, question: Dict, question_id: int, out
 
     # Force output file to be a video
     target_format = 'mp4'
-    file_name = output_dir / ("{:02d}_{:02d}_{:s}.{:s}".format(round_id, question_id, kind, target_format))
+    round_dir = output_dir / ("{:02d}".format(round_id))
+    if not round_dir.exists():
+        round_dir.mkdir()
+    file_name = round_dir / ("{:02d}_{:02d}_{:s}.{:s}".format(round_id, question_id, kind, target_format))
 
     generate_video = True
     if file_name.exists():
