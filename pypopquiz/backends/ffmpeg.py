@@ -67,7 +67,8 @@ class FFMpeg(ppq.backends.backend.Backend):
         width = self.width
         height = self.height
         stream_v = self.stream_v.filter("scale", width=width, height=height, force_original_aspect_ratio=1)
-        self.stream_v = stream_v.filter("pad", width=width, height=height, x="(ow-iw)/2", y="(oh-ih)/2", color="black")
+        stream_v = stream_v.filter("pad", width=width, height=height, x="(ow-iw)/2", y="(oh-ih)/2", color="black")
+        self.stream_v = stream_v.filter("setsar", sar="1/1")
 
     def draw_text_in_box(self, video_text: str, length: int, box_height: int, move: bool, top: bool) -> None:
         """Draws a semi-transparent box either at the top or bottom and writes text in it, optionally scrolling by"""
