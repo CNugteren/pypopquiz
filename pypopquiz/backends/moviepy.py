@@ -1,7 +1,7 @@
 """Moviepy backend for video editing"""
 
 from pathlib import Path
-
+from typing import List
 
 import moviepy.editor
 from moviepy.editor import afx
@@ -17,56 +17,75 @@ class Moviepy(pypopquiz.backends.backend.Backend):
     def __init__(self, source_file: Path, has_video: bool, has_audio: bool,
                  width: int = 1280, height: int = 720) -> None:
         super().__init__(has_video, has_audio, width, height)
-        # TODO: Use the self.has_video and self.has_audio arguments to switch on/off audio/video
-        if source_file.suffix in ('.mp3', '.wav', ):
-            # Create a black clip with the audio file pasted on top
-            audio = moviepy.editor.AudioFileClip(str(source_file))
+        # Keep a reference to the original object that read input files.
+        # moviepy leaks process references even if these objects go out of scope,
+        # and hence we need to close them explicitly at the end of the run() method.
+        self.reader_refs = []  # type: List[moviepy.clip.Clip]
 
-            # Keep a reference to the original object that read the file.
-            # moviepy leaks process references, and hence we need to close them
-            # explicitly at the end of the run() method.
-            self.reader_ref = audio
+        if has_video:
+            audio_input_file = source_file.suffix in ('.mp3', '.wav', )
+            if audio_input_file:
+                # Create a black clip with the audio file pasted on top
+                audio = moviepy.editor.AudioFileClip(str(source_file))
+                self.reader_refs.append(audio)
 
-            self.video = moviepy.editor.ColorClip(size=(width, height), color=(0, 0, 0), duration=audio.duration)
-            self.video = self.video.set_audio(audio)
-            # Need to select something as the fps (colorclip has no inherent framerate)
-            self.video = self.video.set_fps(24)
+                self.clip = moviepy.editor.ColorClip(size=(width, height), color=(0, 0, 0), duration=audio.duration)
+                self.clip = self.clip.set_audio(audio)
+                # Need to select something as the fps (colorclip has no inherent framerate)
+                self.clip = self.clip.set_fps(24)
+            else:
+                # Assume video otherwise
+                self.clip = moviepy.editor.VideoFileClip(str(source_file), audio=has_audio)
+                self.reader_refs.append(self.clip)
+
         else:
-            # Assume video otherwise
-            self.video = moviepy.editor.VideoFileClip(str(source_file))
-
-            # Keep a reference to the original object that read the file.
-            # moviepy leaks process references, and hence we need to close them
-            # explicitly at the end of the run() method.
-            self.reader_ref = self.video
+            assert has_audio
+            # Work only on audio from here on out
+            self.clip = moviepy.editor.AudioFileClip(str(source_file))
+            self.reader_refs.append(self.clip)
 
     def trim(self, start_s: int, end_s: int) -> None:
         """Trims a video to a given start and end time measured in seconds"""
-        self.video = self.video.subclip(start_s, end_s)
+        self.clip = self.clip.subclip(start_s, end_s)
 
     def repeat(self) -> None:
         """Concatenates a video and audio stream with itself to make a twice as long video"""
-        self.video = moviepy.editor.concatenate_videoclips([self.video, self.video])
+        if self.has_video:
+            self.clip = moviepy.editor.concatenate_videoclips([self.clip, self.clip])
+        else:
+            self.clip = moviepy.editor.concatenate_audioclips([self.clip, self.clip])
 
     def combine(self, other: 'Moviepy') -> None:  # type: ignore
         """Combines this video stream with another stream"""
-        self.video = moviepy.editor.concatenate_videoclips([self.video, other.video])
+        self.reader_refs += other.reader_refs
+
+        if self.has_video and other.has_video:
+            self.clip = moviepy.editor.concatenate_videoclips([self.clip, other.clip])
+        else:
+            assert self.has_video is False and other.has_video is False
+            self.clip = moviepy.editor.concatenate_audioclips([self.clip, other.clip])
 
     def fade_in_and_out(self, duration_s: int, video_length_s: int) -> None:
         """Adds a fade-in and fade-out to/from black for the audio and video stream"""
-        self.video = self.video.fx(vfx.fadein, duration_s).\
-            fx(vfx.fadeout, duration_s).\
-            fx(afx.audio_fadein, duration_s).\
-            fx(afx.audio_fadeout, duration_s)
+        if self.has_video:
+            self.clip = self.clip.fx(vfx.fadein, duration_s).\
+                fx(vfx.fadeout, duration_s).\
+                fx(afx.audio_fadein, duration_s).\
+                fx(afx.audio_fadeout, duration_s)
+        else:
+            self.clip = self.clip.fx(afx.audio_fadein, duration_s).\
+                fx(afx.audio_fadeout, duration_s)
 
     def scale_video(self) -> None:
         """Scales the video and pads if necessary to the requested dimensions"""
-        self.video = self.video.fx(vfx.resize, (self.width, self.height))  # TODO: padding with black
+        assert self.has_video
+        self.clip = self.clip.fx(vfx.resize, (self.width, self.height))  # TODO: padding with black
 
     def draw_text_in_box(self, video_text: str, length: int, box_height: int, move: bool, top: bool) -> None:
         """Draws a semi-transparent box either at the top or bottom and writes text in it, optionally scrolling by"""
-        self.video = Moviepy.draw_text_in_box_on_video(
-            self.video, video_text, length, self.height, box_height, move, top
+        assert self.has_video
+        self.clip = Moviepy.draw_text_in_box_on_video(
+            self.clip, video_text, length, self.height, box_height, move, top
         )
 
     @staticmethod
@@ -106,19 +125,29 @@ class Moviepy(pypopquiz.backends.backend.Backend):
 
     def add_spacer(self, text: str, duration_s: float) -> None:
         """Add a text spacer to the start of the clip."""
+        assert self.has_video
         # create a black screen, of duration_s seconds.
         color = moviepy.editor.ColorClip(size=(self.width, self.height), color=(0, 0, 0), duration=duration_s)
         color = color.set_fps(30)  # pylint: disable=assignment-from-no-return
         spacer = Moviepy.draw_text_in_box_on_video(
             color, text, duration_s, self.height, box_height=100, move=True, top=False, on_box=False
         )
-        self.video = moviepy.editor.concatenate_videoclips([spacer, self.video])
+        self.clip = moviepy.editor.concatenate_videoclips([spacer, self.clip])
 
-    def add_audio(self, other: 'FFMpeg') -> None:  # type: ignore
+    def add_audio(self, other: 'Moviepy') -> None:  # type: ignore
         """Adds audio to this video clip from another source"""
         assert self.has_video and other.has_audio
-        # TODO: Fill in
+
+        self.reader_refs += other.reader_refs
+
         self.has_audio = True
+
+        if isinstance(other.clip, moviepy.editor.AudioClip):
+            audio = other.clip
+        else:
+            audio = other.clip.audio
+
+        self.clip = self.clip.set_audio(audio)
 
     def run(self, file_name: Path, dry_run: bool = False) -> Path:
         """Runs the backend to create the video, applying all the filters"""
@@ -129,9 +158,20 @@ class Moviepy(pypopquiz.backends.backend.Backend):
 
         if not dry_run:
             with Moviepy.tmp_intermediate_file(file_name_out) as tmp_out:
-                self.video.write_videofile(str(tmp_out))
+                self.clip.write_videofile(str(tmp_out))
 
         # Close the file reader (typically terminates an ffmpeg process)
-        self.reader_ref.close()
+        self.close_readers()
 
         return file_name_out
+
+    def close_readers(self):
+        """Close potentially open file references on clip objects."""
+        # This is best-effort garbage collection: exceptions are silently passed.
+        for ref in self.reader_refs:
+            try:
+                ref.close()
+            except Exception:  # pylint: disable=broad-except
+                pass
+
+        self.reader_refs = []
