@@ -91,6 +91,13 @@ class FFMpeg(ppq.backends.backend.Backend):
         self.stream_a = other.stream_a
         self.has_audio = True
 
+    def reverse(self) -> None:
+        """Reverses an entire audio or video clip."""
+        if self.has_video:
+            self.stream_v = self.stream_v.filter("reverse")
+        if self.has_audio:
+            self.stream_a = self.stream_a.filter("areverse")
+
     def run(self, file_name: Path, dry_run: bool = False) -> Path:
         """Runs the ffmpeg command to create the video, applying all the filters"""
         with FFMpeg.tmp_intermediate_file(file_name) as tmp_out:

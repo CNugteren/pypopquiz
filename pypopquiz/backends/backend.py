@@ -67,6 +67,10 @@ class Backend(abc.ABC):
         """Add a silence of a certain duration the an audio clip."""
         pass
 
+    def reverse(self) -> None:
+        """Reverses an entire audio or video clip."""
+        pass
+
     @staticmethod
     @contextlib.contextmanager
     def tmp_intermediate_file(file_name_out: Path) -> Generator[Path, None, None]:

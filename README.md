@@ -45,5 +45,5 @@ Feature list / roadmap
 
 | Special features               | Status      |
 |--------------------------------|-------------|
-| Reversed video                 |             |
+| Reversed audio & video         | ✔           |
 | 8-bit/chiptunes audio          |             |
