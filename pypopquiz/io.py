@@ -7,6 +7,8 @@ from typing import Dict, Iterable, List, Tuple
 import jsonschema
 from pytube import YouTube
 
+SOURCES_BASE_FOLDER = "sources"
+
 
 def log(message: str) -> None:
     """Prints a log message to screen"""
@@ -187,7 +189,7 @@ def write_lines(text: Iterable[str], file_name: Path) -> None:
 
 def get_source_file_name(source_data: Dict[str, str]) -> Path:
     """Constructs the name of the source file on disk"""
-    return Path(source_data["identifier"] + "." + source_data["format"])
+    return Path(SOURCES_BASE_FOLDER) / Path(source_data["identifier"] + "." + source_data["format"])
 
 
 def get_source(source_data: Dict[str, str], output_dir: Path, input_dir: Path) -> None:
@@ -195,6 +197,8 @@ def get_source(source_data: Dict[str, str], output_dir: Path, input_dir: Path) -
 
     if not output_dir.exists():
         output_dir.mkdir()
+    if not (output_dir / SOURCES_BASE_FOLDER).exists():
+        (output_dir / SOURCES_BASE_FOLDER).mkdir()
 
     source_type = source_data["source"]
     source_url = source_data["identifier"]
