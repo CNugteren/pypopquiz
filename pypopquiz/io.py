@@ -2,10 +2,13 @@
 
 import json
 from pathlib import Path
-from typing import Dict, Iterable, List, Tuple
+from typing import Dict, Iterable, List, Tuple, Any
 
 import jsonschema
 from pytube import YouTube
+
+import pypopquiz as ppq
+import pypopquiz.video  # pylint: disable=cyclic-import
 
 SOURCES_BASE_FOLDER = "sources"
 
@@ -70,11 +73,13 @@ def verify_input(input_data: Dict) -> None:
                             "additionalProperties": False,
                             "items": {
                                 "type": "object",
-                                "required": ["source", "identifier", "format"],
+                                "required": ["source", "identifier"],
                                 "properties": {
                                     "source": {"type": "string"},
                                     "identifier": {"type": "string"},
                                     "format": {"type": "string"},
+                                    "text": {"type": "array", "minItems": 1, "items": {"type": "string"}},
+                                    "duration": {"type": "integer"},
                                 }
                             }
                         },
@@ -155,6 +160,15 @@ def verify_input(input_data: Dict) -> None:
     }
     jsonschema.validate(input_data, schema)
     for question in input_data["questions"]:
+        for source in question["sources"]:
+            source_keys = source.keys() - {"source", "identifier"}
+            if source["source"] == "youtube":
+                if source_keys != {"format"}:
+                    raise ValueError("Missing source keys from Youtube source {:s}".format(str(source)))
+            if source["source"] == "text":
+                if source_keys != {"text", "duration"}:
+                    raise ValueError("Missing source keys from text source {:s}".format(str(source)))
+                source["format"] = "mp4"  # default format
         if len(question["answers"]) != len(question["answer_video"]):
             raise ValueError("Expected {:d} answers, got {:d}".
                              format(len(question["answer_video"]), len(question["answers"])))
@@ -192,7 +206,7 @@ def get_source_file_name(source_data: Dict[str, str]) -> Path:
     return Path(SOURCES_BASE_FOLDER) / Path(source_data["identifier"] + "." + source_data["format"])
 
 
-def get_source(source_data: Dict[str, str], output_dir: Path, input_dir: Path) -> None:
+def get_source(source_data: Dict[str, Any], output_dir: Path, input_dir: Path) -> None:
     """Retrieves a source and stores is in a local output directory, skips if already there"""
 
     if not output_dir.exists():
@@ -205,7 +219,7 @@ def get_source(source_data: Dict[str, str], output_dir: Path, input_dir: Path) -
 
     output_file = output_dir / get_source_file_name(source_data)
     if output_file.exists():
-        log("Skipping downloading of video '{:s}', already on disk".format(source_url))
+        log("Skipping creation of source '{:s}', already on disk".format(source_url))
         return
 
     if source_type == "youtube":
@@ -216,5 +230,7 @@ def get_source(source_data: Dict[str, str], output_dir: Path, input_dir: Path) -
     elif source_type == "local":
         input_file = input_dir / get_source_file_name(source_data)
         input_file.rename(output_dir / SOURCES_BASE_FOLDER)
+    elif source_type == "text":
+        ppq.video.create_text_video(output_file, source_data["text"], source_data["duration"])
     else:
         raise KeyError("Unsupported source(s) '{:s}'".format(source_type))
