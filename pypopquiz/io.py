@@ -1,14 +1,10 @@
-"""I/O utilities, including disk and Youtube I/O"""
+"""I/O utilities, including disk and JSON parsing"""
 
 import json
 from pathlib import Path
-from typing import Dict, Iterable, List, Tuple, Any
+from typing import Dict, Iterable, List, Tuple
 
 import jsonschema
-from pytube import YouTube
-
-import pypopquiz as ppq
-import pypopquiz.video  # pylint: disable=cyclic-import
 
 SOURCES_BASE_FOLDER = "sources"
 
@@ -204,33 +200,3 @@ def write_lines(text: Iterable[str], file_name: Path) -> None:
 def get_source_file_name(source_data: Dict[str, str]) -> Path:
     """Constructs the name of the source file on disk"""
     return Path(SOURCES_BASE_FOLDER) / Path(source_data["identifier"] + "." + source_data["format"])
-
-
-def get_source(source_data: Dict[str, Any], output_dir: Path, input_dir: Path) -> None:
-    """Retrieves a source and stores is in a local output directory, skips if already there"""
-
-    if not output_dir.exists():
-        output_dir.mkdir()
-    if not (output_dir / SOURCES_BASE_FOLDER).exists():
-        (output_dir / SOURCES_BASE_FOLDER).mkdir()
-
-    source_type = source_data["source"]
-    source_url = source_data["identifier"]
-
-    output_file = output_dir / get_source_file_name(source_data)
-    if output_file.exists():
-        log("Skipping creation of source '{:s}', already on disk".format(source_url))
-        return
-
-    if source_type == "youtube":
-        log("Downloading video '{:s}' from Youtube...".format(source_url))
-        video = YouTube("https://www.youtube.com/watch?v={:s}".format(source_url))
-        video = video.streams.filter(subtype=source_data["format"]).first()
-        video.download(output_path=str(output_dir / SOURCES_BASE_FOLDER), filename=source_url)
-    elif source_type == "local":
-        input_file = input_dir / get_source_file_name(source_data)
-        input_file.rename(output_dir / SOURCES_BASE_FOLDER)
-    elif source_type == "text":
-        ppq.video.create_text_video(output_file, source_data["text"], source_data["duration"])
-    else:
-        raise KeyError("Unsupported source(s) '{:s}'".format(source_type))
