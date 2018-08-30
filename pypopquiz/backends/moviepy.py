@@ -149,7 +149,7 @@ class Moviepy(pypopquiz.backends.backend.Backend):
         """Reverses an entire audio or video clip."""
         duration = self.clip.duration
         self.clip = self.clip.fl_time(lambda t: self.clip.duration - t, keep_duration=True)
-        if self.has_video:
+        if self.has_video and self.clip.audio is not None:
             # When reversing a video clip, moviepy forgets to set the audio duration,
             # and complaints later on.
             self.clip.audio.duration = duration
