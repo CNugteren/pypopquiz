@@ -11,6 +11,11 @@ import pypopquiz as ppq
 import pypopquiz.backends.backend
 
 
+def silence(_) -> float:
+    """Callback function for make_frame() on AudioClip to generate silence."""
+    return 0
+
+
 class Moviepy(pypopquiz.backends.backend.Backend):
     """Moviepy backend."""
 
@@ -133,6 +138,15 @@ class Moviepy(pypopquiz.backends.backend.Backend):
             color, text, duration_s, self.height, box_height=100, move=True, top=False, on_box=False
         )
         self.clip = moviepy.editor.concatenate_videoclips([spacer, self.clip])
+
+    def add_silence(self, duration_s: float) -> None:
+        """Add a silence of a certain duration the an audio clip."""
+        silence_clip = moviepy.editor.AudioClip(silence, duration=duration_s)
+        self.clip = moviepy.editor.concatenate_audioclips([silence_clip, self.clip])
+
+    def reverse(self) -> None:
+        """Reverses an entire audio or video clip."""
+        pass
 
     def add_audio(self, other: 'Moviepy') -> None:  # type: ignore
         """Adds audio to this video clip from another source"""
