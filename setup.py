@@ -1,4 +1,4 @@
-from setuptools import setup
+from setuptools import setup, find_packages
 
 setup(
     name="pypopquiz",
@@ -9,6 +9,8 @@ setup(
     license="MIT",
     install_requires=["ffmpeg-python", "pytube", "jsonschema", "moviepy", "requests"],
     scripts=["pypopquiz/popquiz.py"],
+    packages=find_packages(),
+    package_data={'': ['*.png']},
     classifiers=[
         'Development Status :: 4 - Beta',
         'Intended Audience :: Public',
