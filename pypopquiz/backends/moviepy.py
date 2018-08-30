@@ -73,6 +73,7 @@ class Moviepy(pypopquiz.backends.backend.Backend):
     def fade_in_and_out(self, duration_s: int, video_length_s: int) -> None:
         """Adds a fade-in and fade-out to/from black for the audio and video stream"""
         if self.has_video:
+
             self.clip = self.clip.fx(vfx.fadein, duration_s).\
                 fx(vfx.fadeout, duration_s).\
                 fx(afx.audio_fadein, duration_s).\
@@ -146,7 +147,12 @@ class Moviepy(pypopquiz.backends.backend.Backend):
 
     def reverse(self) -> None:
         """Reverses an entire audio or video clip."""
-        pass
+        duration = self.clip.duration
+        self.clip = self.clip.fl_time(lambda t: self.clip.duration - t, keep_duration=True)
+        if self.has_video:
+            # When reversing a video clip, moviepy forgets to set the audio duration,
+            # and complaints later on.
+            self.clip.audio.duration = duration
 
     def add_audio(self, other: 'Moviepy') -> None:  # type: ignore
         """Adds audio to this video clip from another source"""
@@ -172,7 +178,7 @@ class Moviepy(pypopquiz.backends.backend.Backend):
 
         if not dry_run:
             with Moviepy.tmp_intermediate_file(file_name_out) as tmp_out:
-                self.clip.write_videofile(str(tmp_out))
+                self.clip.write_videofile(str(tmp_out), threads=2)
 
         # Close the file reader (typically terminates an ffmpeg process)
         self.close_readers()
