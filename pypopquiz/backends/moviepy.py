@@ -1,11 +1,15 @@
 """Moviepy backend for video editing"""
 
 from pathlib import Path
-from typing import List
+from typing import List, Tuple
+
+import numpy as np
+
 
 import moviepy.editor
 from moviepy.editor import afx
 from moviepy.editor import vfx
+from moviepy.decorators import audio_video_fx
 
 import pypopquiz as ppq
 import pypopquiz.backends.backend
@@ -14,6 +18,45 @@ import pypopquiz.backends.backend
 def silence(_) -> float:
     """Callback function for make_frame() on AudioClip to generate silence."""
     return 0
+
+
+def make_sin(t) -> float:
+    out = [np.sin(1500 * np.pi * t)]
+    # print(t)
+    return out
+
+
+@audio_video_fx
+def audio_replace(clip, interval):
+    """Fx that replaces interval by a beep"""
+
+    def beeped(gf, t):
+        gft = gf(t)
+
+        if np.isscalar(t):
+            if interval[0] < t < interval[1]:
+                t_offset = t - interval[0]
+                out = [np.sin(1500 * np.pi * t_offset)]
+            else:
+                out = gft
+        else:
+            # print(t[0], t.shape)
+            # print(gft.shape)
+
+            if interval[0] < t[0] < interval[1]:
+                t_offset = t - interval[0]
+                tone = np.array(np.sin(1500 * np.pi * t_offset))
+                out = np.vstack([tone, tone]).T
+            else:
+                out = gft
+
+            print(gft.shape, out.shape)
+            # selector = [interval[0] < t < interval[1]]
+            # options = [tone, gft]
+            # out = np.select(selector, options)
+        return out
+    return clip.fl(beeped, keep_duration=True)
+
 
 
 class Moviepy(pypopquiz.backends.backend.Backend):
@@ -77,10 +120,12 @@ class Moviepy(pypopquiz.backends.backend.Backend):
             self.clip = self.clip.fx(vfx.fadein, duration_s).\
                 fx(vfx.fadeout, duration_s).\
                 fx(afx.audio_fadein, duration_s).\
-                fx(afx.audio_fadeout, duration_s)
+                fx(afx.audio_fadeout, duration_s).\
+                fx(audio_replace, (1, 4))
         else:
             self.clip = self.clip.fx(afx.audio_fadein, duration_s).\
-                fx(afx.audio_fadeout, duration_s)
+                fx(afx.audio_fadeout, duration_s).\
+                fx(audio_replace, (1, 4))
 
     def scale_video(self) -> None:
         """Scales the video and pads if necessary to the requested dimensions"""
@@ -169,6 +214,14 @@ class Moviepy(pypopquiz.backends.backend.Backend):
 
         self.clip = self.clip.set_audio(audio)
 
+    def audio_normalize(self) -> None:
+        if self.has_audio:
+            self.clip = self.clip.fx(afx.audio_normalize)
+
+    def add_beep(self, interval: Tuple[int, int]) -> None:
+        tone = moviepy.editor.AudioClip(make_sin, duration=self.clip.duration)
+        self.clip = self.clip.set_audio(tone)
+
     def run(self, file_name: Path, dry_run: bool = False) -> Path:
         """Runs the backend to create the video, applying all the filters"""
         file_name_out = file_name
@@ -178,7 +231,8 @@ class Moviepy(pypopquiz.backends.backend.Backend):
 
         if not dry_run:
             with Moviepy.tmp_intermediate_file(file_name_out) as tmp_out:
-                self.clip.write_videofile(str(tmp_out), threads=2)
+                self.clip.write_videofile(str(tmp_out))
+                # self.clip.write_videofile(str(tmp_out), threads=2)
 
         # Close the file reader (typically terminates an ffmpeg process)
         self.close_readers()
