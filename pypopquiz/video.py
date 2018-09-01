@@ -31,8 +31,9 @@ def get_interval_length(interval: Tuple[int, int]) -> int:
     return interval[1] - interval[0]
 
 
-def filter_stream_video(stream: VideoBackend, kind: str, interval: Tuple[int, int], answer_text: List[str],
-                        reverse: bool, box_height: int = 100, fade_amount_s: int = 3, answer_label_events: Optional[List] = None) -> VideoBackend:
+def filter_stream_video(stream: VideoBackend, kind: str, interval: Tuple[int, int], answer_texts: List[str],
+                        reverse: bool, box_height: int = 100, fade_amount_s: int = 3,
+                        answer_label_events: Optional[List] = None) -> VideoBackend:
     """Adds ffmpeg filters to the stream, processing a single video stream"""
     if kind == "answer" and answer_label_events is not None:
         for event in answer_label_events:
@@ -163,7 +164,8 @@ def create_video(kind: str, round_id: int, question: Dict, question_id: int, out
         answer_label_event_ids = video_info.get("answer_label_events", [])
         answer_label_events = [x for i, x in enumerate(events) if i in answer_label_event_ids]
         stream_video = backend_cls(video_files[video_id], has_video=True, has_audio=False, width=width, height=height)
-        stream_video = filter_stream_video(stream_video, kind, interval, answer_texts[video_id], reverse, answer_label_events=answer_label_events)
+        stream_video = filter_stream_video(stream_video, kind, interval, answer_texts[video_id],
+                                           reverse, answer_label_events=answer_label_events)
         if stream_videos is None:
             stream_videos = stream_video
         else:

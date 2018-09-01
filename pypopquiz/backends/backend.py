@@ -90,6 +90,10 @@ class Backend(abc.ABC):
         """Replace the original audio by a beep in a particular interval."""
         pass
 
+    def overlay_fading_text(self, text: str, interval: Tuple[float, float]):
+        """Overlay fading text on the clip."""
+        pass
+
     @staticmethod
     @contextlib.contextmanager
     def tmp_intermediate_file(file_name_out: Path) -> Generator[Path, None, None]:

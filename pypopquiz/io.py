@@ -23,7 +23,7 @@ def get_interval_in_s(interval: Tuple[str, str]) -> Tuple[int, int]:
 def get_interval_in_fractional_s(interval: Tuple[str, str]) -> Tuple[float, float]:
     """Converts an interval in string form (e.g. [1:10, 2:30] in seconds, e.g. [70, 150] seconds"""
     seconds = get_interval_in_s(interval)
-    out = [s for s in seconds]
+    out = [float(s) for s in seconds]
     for part in (0, 1):
         fsec = interval[part].split('.')
         out[part] = float(seconds[part])
@@ -31,6 +31,7 @@ def get_interval_in_fractional_s(interval: Tuple[str, str]) -> Tuple[float, floa
             out[part] += float('0.' + fsec[1])
 
     return (out[0], out[1])
+
 
 def get_interval_duration(interval: Tuple[str, str]) -> int:
     """Converts an interval in string form (e.g. [1:10, 2:30] to duration, e.g. 80 seconds"""

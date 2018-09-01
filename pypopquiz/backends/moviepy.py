@@ -149,7 +149,7 @@ class Moviepy(pypopquiz.backends.backend.Backend):
         clips = [video]
 
         y_location = 0 if top else height - box_height
-        y_location = height / 2 if center else y_location
+        y_location = height // 2 if center else y_location
         video_w, _ = video.size
 
         if on_box:
