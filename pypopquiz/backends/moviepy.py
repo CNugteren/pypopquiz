@@ -1,15 +1,16 @@
 """Moviepy backend for video editing"""
 
 from pathlib import Path
+import typing
 from typing import Callable, List, Tuple, Union
 
 import numpy as np
 
-
-import moviepy.editor
-from moviepy.editor import afx
-from moviepy.editor import vfx
-from moviepy.decorators import audio_video_fx
+import moviepy
+import moviepy.editor as med  # pylint: disable=no-name-in-module,import-error
+from moviepy.decorators import audio_video_fx  # pylint: disable=import-error,no-name-in-module
+from med import afx  # pylint: disable=import-error
+from med import vfx  # pylint: disable=import-error
 
 import pypopquiz as ppq
 import pypopquiz.backends.backend
@@ -20,21 +21,23 @@ def silence(_) -> float:
     return 0
 
 
-def make_sin(t) -> float:
-    out = [np.sin(1500 * np.pi * t)]
-    # print(t)
+def make_sin(time_seconds: np.array) -> List[float]:
+    """Create a single tone."""
+    out = [np.sin(1500 * np.pi * time_seconds)]
     return out
 
 
 @audio_video_fx
-def tone_in_interval(clip: moviepy.editor.AudioClip, interval: Tuple[float, float], freq_hz: int):
+def tone_in_interval(clip: med.AudioClip, interval: Tuple[float, float], freq_hz: int):
     """Fx that replaces interval by a beep."""
 
-    def beeped(get_frame: Callable, t: Union[float, List]):
+    def beeped(get_frame: Callable, time_seconds: Union[float, np.array]):
         """Fx callback that replaces the original sounds with a tone in an interval."""
+        t = time_seconds  # pylint: disable=invalid-name
         original = get_frame(t)
 
         if np.isscalar(t):
+            t = typing.cast(float, t)  # pylint: disable=invalid-name
             if interval[0] < t < interval[1]:
                 t_offset = t - interval[0]
                 out = [np.sin(1500 * np.pi * t_offset)]
@@ -73,22 +76,22 @@ class Moviepy(pypopquiz.backends.backend.Backend):
             audio_input_file = source_file.suffix in ('.mp3', '.wav', )
             if audio_input_file:
                 # Create a black clip with the audio file pasted on top
-                audio = moviepy.editor.AudioFileClip(str(source_file))
+                audio = med.AudioFileClip(str(source_file))
                 self.reader_refs.append(audio)
 
-                self.clip = moviepy.editor.ColorClip(size=(width, height), color=(0, 0, 0), duration=audio.duration)
+                self.clip = med.ColorClip(size=(width, height), color=(0, 0, 0), duration=audio.duration)
                 self.clip = self.clip.set_audio(audio)
                 # Need to select something as the fps (colorclip has no inherent framerate)
                 self.clip = self.clip.set_fps(24)
             else:
                 # Assume video otherwise
-                self.clip = moviepy.editor.VideoFileClip(str(source_file), audio=has_audio)
+                self.clip = med.VideoFileClip(str(source_file), audio=has_audio)
                 self.reader_refs.append(self.clip)
 
         else:
             assert has_audio
             # Work only on audio from here on out
-            self.clip = moviepy.editor.AudioFileClip(str(source_file))
+            self.clip = med.AudioFileClip(str(source_file))
             self.reader_refs.append(self.clip)
 
     def trim(self, start_s: int, end_s: int) -> None:
@@ -98,19 +101,19 @@ class Moviepy(pypopquiz.backends.backend.Backend):
     def repeat(self) -> None:
         """Concatenates a video and audio stream with itself to make a twice as long video"""
         if self.has_video:
-            self.clip = moviepy.editor.concatenate_videoclips([self.clip, self.clip])
+            self.clip = med.concatenate_videoclips([self.clip, self.clip])
         else:
-            self.clip = moviepy.editor.concatenate_audioclips([self.clip, self.clip])
+            self.clip = med.concatenate_audioclips([self.clip, self.clip])
 
     def combine(self, other: 'Moviepy') -> None:  # type: ignore
         """Combines this video stream with another stream"""
         self.reader_refs += other.reader_refs
 
         if self.has_video and other.has_video:
-            self.clip = moviepy.editor.concatenate_videoclips([self.clip, other.clip])
+            self.clip = med.concatenate_videoclips([self.clip, other.clip])
         else:
             assert self.has_video is False and other.has_video is False
-            self.clip = moviepy.editor.concatenate_audioclips([self.clip, other.clip])
+            self.clip = med.concatenate_audioclips([self.clip, other.clip])
 
     def fade_in_and_out(self, duration_s: int, video_length_s: int) -> None:
         """Adds a fade-in and fade-out to/from black for the audio and video stream"""
@@ -137,9 +140,9 @@ class Moviepy(pypopquiz.backends.backend.Backend):
         )
 
     @staticmethod
-    def draw_text_in_box_on_video(video: moviepy.editor.VideoFileClip, video_text: str,
+    def draw_text_in_box_on_video(video: med.VideoFileClip, video_text: str,
                                   length: float, height: int, box_height: int, move: bool,
-                                  top: bool, on_box: bool = True) -> moviepy.editor.CompositeVideoClip:
+                                  top: bool, on_box: bool = True) -> med.CompositeVideoClip:
         """Draws a semi-transparent box either at the top or bottom and writes text in it, optionally scrolling by"""
         clips = [video]
 
@@ -148,12 +151,12 @@ class Moviepy(pypopquiz.backends.backend.Backend):
         txt_left_margin = 50
 
         if on_box:
-            color_clip = moviepy.editor.ColorClip(size=(video_w, box_height), color=(0, 0, 0))
+            color_clip = med.ColorClip(size=(video_w, box_height), color=(0, 0, 0))
             color_clip = color_clip.set_opacity(0.6)  # pylint: disable=assignment-from-no-return
             color_clip = color_clip.set_position(pos=(0, y_location))
             clips.append(color_clip)
 
-        txt = moviepy.editor.TextClip(video_text, font='Arial', color='white', fontsize=30)
+        txt = med.TextClip(video_text, font='Arial', color='white', fontsize=30)
         txt_y_location = (box_height - txt.h) // 2 + y_location
 
         # pylint: disable=assignment-from-no-return
@@ -167,7 +170,7 @@ class Moviepy(pypopquiz.backends.backend.Backend):
         clips.append(txt_mov)
 
         duration = video.duration
-        video = moviepy.editor.CompositeVideoClip(clips)
+        video = med.CompositeVideoClip(clips)
         video.duration = duration
         return video
 
@@ -175,17 +178,17 @@ class Moviepy(pypopquiz.backends.backend.Backend):
         """Add a text spacer to the start of the clip."""
         assert self.has_video
         # create a black screen, of duration_s seconds.
-        color = moviepy.editor.ColorClip(size=(self.width, self.height), color=(0, 0, 0), duration=duration_s)
+        color = med.ColorClip(size=(self.width, self.height), color=(0, 0, 0), duration=duration_s)
         color = color.set_fps(30)  # pylint: disable=assignment-from-no-return
         spacer = Moviepy.draw_text_in_box_on_video(
             color, text, duration_s, self.height, box_height=100, move=True, top=False, on_box=False
         )
-        self.clip = moviepy.editor.concatenate_videoclips([spacer, self.clip])
+        self.clip = med.concatenate_videoclips([spacer, self.clip])
 
     def add_silence(self, duration_s: float) -> None:
         """Add a silence of a certain duration the an audio clip."""
-        silence_clip = moviepy.editor.AudioClip(silence, duration=duration_s)
-        self.clip = moviepy.editor.concatenate_audioclips([silence_clip, self.clip])
+        silence_clip = med.AudioClip(silence, duration=duration_s)
+        self.clip = med.concatenate_audioclips([silence_clip, self.clip])
 
     def reverse(self) -> None:
         """Reverses an entire audio or video clip."""
@@ -204,7 +207,7 @@ class Moviepy(pypopquiz.backends.backend.Backend):
 
         self.has_audio = True
 
-        if isinstance(other.clip, moviepy.editor.AudioClip):
+        if isinstance(other.clip, med.AudioClip):
             audio = other.clip
         else:
             audio = other.clip.audio
@@ -212,12 +215,13 @@ class Moviepy(pypopquiz.backends.backend.Backend):
         self.clip = self.clip.set_audio(audio)
 
     def audio_normalize(self) -> None:
+        """Normalize the audio volume."""
         if self.has_audio:
             self.clip = self.clip.fx(afx.audio_normalize)
 
     def add_beep_audio(self) -> None:
         """Add a single tone as audio track."""
-        tone = moviepy.editor.AudioClip(make_sin, duration=self.clip.duration)
+        tone = med.AudioClip(make_sin, duration=self.clip.duration)
         self.clip = self.clip.set_audio(tone)
 
     def replace_audio_by_beep(self, interval: Tuple[float, float], freq_hz: int = 1500) -> None:
