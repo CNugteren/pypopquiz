@@ -1,7 +1,7 @@
 """Moviepy backend for video editing"""
 
 from pathlib import Path
-from typing import List, Tuple
+from typing import Callable, List, Tuple, Union
 
 import numpy as np
 
@@ -27,36 +27,35 @@ def make_sin(t) -> float:
 
 
 @audio_video_fx
-def audio_replace(clip, interval):
-    """Fx that replaces interval by a beep"""
+def tone_in_interval(clip: moviepy.editor.AudioClip, interval: Tuple[float, float], freq_hz: int):
+    """Fx that replaces interval by a beep."""
 
-    def beeped(gf, t):
-        gft = gf(t)
+    def beeped(get_frame: Callable, t: Union[float, List]):
+        """Fx callback that replaces the original sounds with a tone in an interval."""
+        original = get_frame(t)
 
         if np.isscalar(t):
             if interval[0] < t < interval[1]:
                 t_offset = t - interval[0]
                 out = [np.sin(1500 * np.pi * t_offset)]
             else:
-                out = gft
+                out = original
         else:
-            # print(t[0], t.shape)
-            # print(gft.shape)
+            selector0 = interval[0] < t
+            selector1 = interval[1] > t
+            selector = np.logical_and(selector0, selector1)
 
-            if interval[0] < t[0] < interval[1]:
-                t_offset = t - interval[0]
-                tone = np.array(np.sin(1500 * np.pi * t_offset))
-                out = np.vstack([tone, tone]).T
-            else:
-                out = gft
+            t_offset = t - interval[0]
+            tone = np.array(np.sin(freq_hz * np.pi * t_offset))
 
-            print(gft.shape, out.shape)
-            # selector = [interval[0] < t < interval[1]]
-            # options = [tone, gft]
-            # out = np.select(selector, options)
+            channels_out = []
+            channels = original.T
+            for channel in channels:
+                channels_out.append(np.where(selector, tone, channel))
+
+            out = np.vstack(channels_out).T
         return out
     return clip.fl(beeped, keep_duration=True)
-
 
 
 class Moviepy(pypopquiz.backends.backend.Backend):
@@ -120,12 +119,10 @@ class Moviepy(pypopquiz.backends.backend.Backend):
             self.clip = self.clip.fx(vfx.fadein, duration_s).\
                 fx(vfx.fadeout, duration_s).\
                 fx(afx.audio_fadein, duration_s).\
-                fx(afx.audio_fadeout, duration_s).\
-                fx(audio_replace, (1, 4))
+                fx(afx.audio_fadeout, duration_s)
         else:
             self.clip = self.clip.fx(afx.audio_fadein, duration_s).\
-                fx(afx.audio_fadeout, duration_s).\
-                fx(audio_replace, (1, 4))
+                fx(afx.audio_fadeout, duration_s)
 
     def scale_video(self) -> None:
         """Scales the video and pads if necessary to the requested dimensions"""
@@ -218,9 +215,14 @@ class Moviepy(pypopquiz.backends.backend.Backend):
         if self.has_audio:
             self.clip = self.clip.fx(afx.audio_normalize)
 
-    def add_beep(self, interval: Tuple[int, int]) -> None:
+    def add_beep_audio(self) -> None:
+        """Add a single tone as audio track."""
         tone = moviepy.editor.AudioClip(make_sin, duration=self.clip.duration)
         self.clip = self.clip.set_audio(tone)
+
+    def replace_audio_by_beep(self, interval: Tuple[float, float], freq_hz: int = 1500) -> None:
+        """Replace the original audio by a beep in a particular interval."""
+        self.clip = self.clip.fx(tone_in_interval, interval, freq_hz=freq_hz)
 
     def run(self, file_name: Path, dry_run: bool = False) -> Path:
         """Runs the backend to create the video, applying all the filters"""
