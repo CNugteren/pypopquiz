@@ -1,8 +1,10 @@
 """FFMPEG backend for video editing"""
 
-from pathlib import Path
 import subprocess
+from pathlib import Path
+from typing import Any
 
+import pkg_resources
 import ffmpeg
 
 import pypopquiz as ppq
@@ -14,9 +16,9 @@ class FFMpeg(ppq.backends.backend.Backend):
     """FFMPEG backend, implements interface from base-class"""
 
     def __init__(self, source_file: Path, has_video: bool, has_audio: bool,
-                 display_graph: bool = False, width: int = 1280, height: int = 720) -> None:
+                 display_graph: bool = False, width: int = 1280, height: int = 720, **kwargs: Any) -> None:
         super().__init__(has_video, has_audio, width, height)
-        stream = ffmpeg.input(str(source_file))
+        stream = ffmpeg.input(str(source_file), **kwargs)
         self.display_graph = display_graph
         self.stream_v = stream["v"] if self.has_video else None
         self.stream_a = stream["a"] if self.has_audio else None
@@ -86,6 +88,17 @@ class FFMpeg(ppq.backends.backend.Backend):
         self.stream_v = stream_v.drawtext(text=video_text, fontcolor="white", fontsize=50,
                                           x=x_location_text, y=y_location_text)
 
+    def draw_text(self, video_text: str, height_fraction: float) -> None:
+        """Draws text in the center of the video at a certain height fraction"""
+        if not self.has_video:
+            return
+        assert 0 <= height_fraction <= 1
+
+        x_location_text = "{:d} - text_w / 2".format(self.width // 2)
+        y_location_text = self.height * height_fraction
+        self.stream_v = self.stream_v.drawtext(text=video_text, fontcolor="white", fontsize=50,
+                                               x=x_location_text, y=y_location_text)
+
     def add_audio(self, other: 'FFMpeg') -> None:  # type: ignore
         """Adds audio to this video clip from another source"""
         assert self.has_video and other.has_audio
@@ -118,6 +131,15 @@ class FFMpeg(ppq.backends.backend.Backend):
                 ppq.io.log("Completed ffmpeg, successfully generated result")
 
         return file_name
+
+    @classmethod
+    def create_empty_stream(cls, duration: int, width: int = 1280, height: int = 720) -> 'FFMpeg':
+        """Creates a video of a certain duration with a black still image"""
+        still_image = pkg_resources.resource_filename("resources", "still_black.png")
+        stream = cls(Path(still_image), has_video=True, has_audio=False, width=width, height=height,
+                     t=duration, framerate=25, loop=1)
+        stream.scale_video()
+        return stream
 
 
 def ffmpeg_version() -> str:

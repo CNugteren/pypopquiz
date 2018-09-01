@@ -50,13 +50,22 @@ class Backend(abc.ABC):
         """Draws a semi-transparent box either at the top or bottom and writes text in it, optionally scrolling by"""
         pass
 
+    def draw_text(self, video_text: str, height_fraction: float) -> None:
+        """Draws text in the center of the video at a certain height fraction"""
+        pass
+
     @abc.abstractmethod
-    def add_audio(self, other: 'FFMpeg') -> None:  # type: ignore
+    def add_audio(self, other: 'Backend') -> None:  # type: ignore
         """Adds audio to this video clip from another source"""
 
     @abc.abstractmethod
     def run(self, file_name: Path, dry_run: bool = False) -> Path:
         """Runs the backend to create the video, applying all the filters"""
+        pass
+
+    @classmethod
+    def create_empty_stream(cls, duration: int, width: int = 1280, height: int = 720) -> 'Backend':
+        """Creates a video of a certain duration with a black still image"""
         pass
 
     def add_spacer(self, text: str, duration_s: float) -> None:

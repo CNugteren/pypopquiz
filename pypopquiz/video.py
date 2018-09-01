@@ -188,3 +188,14 @@ def combine_videos(video_files: List[Path], kind: str, round_id: int, output_dir
 
     file_name = output_dir / ("{:02d}_{:s}{:s}".format(round_id, kind, video_files[0].suffix))
     stream.run(file_name)
+
+
+def create_text_video(file_name: Path, source_texts: List[str], duration: int,
+                      width: int = 1280, height: int = 720, backend: str = 'ffmpeg') -> None:
+    """Generates a video with text on a black background"""
+    backend_cls = get_backend(backend)
+    stream = backend_cls.create_empty_stream(duration, width=width, height=height)
+    num_texts = len(source_texts)
+    for text_id, source_text in enumerate(source_texts):
+        stream.draw_text(source_text, 0.5 - 0.1 * num_texts + 0.2 * text_id)
+    stream.run(file_name)
