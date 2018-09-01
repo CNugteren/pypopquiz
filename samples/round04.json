@@ -10,7 +10,7 @@
         {"source": "youtube", "identifier": "pkcJEvMcnEg", "format": "mp4"},
         {"source": "text", "identifier": "nirvana_text", "text": ["... (3)", "That's ok, cause so are you"], "duration": 15}
       ],
-      "question_video": [{"source": 1, "interval": ["0:00", "0:15"]}],
+      "question_video": [{"source": 1}],
       "question_audio": [{"source": 0, "interval": ["0:19", "0:34"]}],
       "answer_video": [{"source": 0, "interval": ["0:15", "0:31"]}],
       "answer_audio": [{"source": 0, "interval": ["0:15", "0:31"]}],
@@ -21,7 +21,7 @@
         {"source": "youtube", "identifier": "FHG2oizTlpY", "format": "mp4"},
         {"source": "text", "identifier": "celine_dion_text", "text": ["... (3)", "I believe that the heart does go on"], "duration": 30}
       ],
-      "question_video": [{"source": 1, "interval": ["0:00", "0:30"]}],
+      "question_video": [{"source": 1}],
       "question_audio": [{"source": 0, "interval": ["1:07", "1:37"]}],
       "answer_video": [{"source": 0, "interval": ["1:02", "1:37"]}],
       "answer_audio": [{"source": 0, "interval": ["1:02", "1:37"]}],

@@ -33,6 +33,7 @@ def total_duration(clips: List[Dict]) -> int:
 
 def verify_input(input_data: Dict) -> None:
     """Verifies that the input JSON is valid. If not, raises an error indicating the mistake"""
+    # pylint: disable=too-many-branches
 
     schema = {
         "$schema": "http://json-schema.org/draft-04/schema#",
@@ -85,7 +86,7 @@ def verify_input(input_data: Dict) -> None:
                             "additionalProperties": False,
                             "items": {
                                 "type": "object",
-                                "required": ["source", "interval"],
+                                "required": ["source"],
                                 "additionalProperties": True,
                                 "properties": {
                                     "source": {"type": "number"},
@@ -100,7 +101,7 @@ def verify_input(input_data: Dict) -> None:
                             "additionalProperties": False,
                             "items": {
                                 "type": "object",
-                                "required": ["source", "interval"],
+                                "required": ["source"],
                                 "additionalProperties": True,
                                 "properties": {
                                     "source": {"type": "number"},
@@ -116,7 +117,7 @@ def verify_input(input_data: Dict) -> None:
                             "additionalProperties": False,
                             "items": {
                                 "type": "object",
-                                "required": ["source", "interval"],
+                                "required": ["source"],
                                 "additionalProperties": True,
                                 "properties": {
                                     "source": {"type": "number"},
@@ -131,7 +132,7 @@ def verify_input(input_data: Dict) -> None:
                             "additionalProperties": False,
                             "items": {
                                 "type": "object",
-                                "required": ["source", "interval"],
+                                "required": ["source"],
                                 "additionalProperties": True,
                                 "properties": {
                                     "source": {"type": "number"},
@@ -155,6 +156,24 @@ def verify_input(input_data: Dict) -> None:
         }
     }
     jsonschema.validate(input_data, schema)
+
+    # Sets intervals to the full duration if not specified
+    for index, question in enumerate(input_data["questions"]):
+        for sub_type in ("question_video", "question_audio", "answer_video", "answer_audio"):
+            for sub_item in question[sub_type]:
+                source_index = sub_item["source"]
+                if "interval" not in sub_item.keys():
+                    source = question["sources"][source_index]
+                    if "duration" not in source.keys():
+                        raise ValueError("Missing interval for question {:d}'s '{:s}'".format(index, sub_type))
+                    else:
+                        minutes = source["duration"] // 60
+                        seconds = source["duration"] % 60
+                        sub_item["interval"] = ["0:00", "{:d}:{:2d}".format(minutes, seconds)]
+                        log("Set duration for question {:d}'s '{:s}' to {:s}".
+                            format(index, sub_type, str(sub_item["interval"])))
+
+    # Additional constraints on the input
     for question in input_data["questions"]:
         for source in question["sources"]:
             source_keys = source.keys() - {"source", "identifier"}
