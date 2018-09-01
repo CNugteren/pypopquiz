@@ -2,7 +2,7 @@
 
 from pathlib import Path
 import typing
-from typing import Callable, List, Tuple, Union
+from typing import Callable, List, Optional, Tuple, Union
 
 import numpy as np
 
@@ -40,7 +40,7 @@ def tone_in_interval(clip: med.AudioClip, interval: Tuple[float, float], freq_hz
             t = typing.cast(float, t)  # pylint: disable=invalid-name
             if interval[0] < t < interval[1]:
                 t_offset = t - interval[0]
-                out = [np.sin(1500 * np.pi * t_offset)]
+                out = [np.sin(freq_hz * np.pi * t_offset)]
             else:
                 out = original
         else:
@@ -136,19 +136,21 @@ class Moviepy(pypopquiz.backends.backend.Backend):
         """Draws a semi-transparent box either at the top or bottom and writes text in it, optionally scrolling by"""
         assert self.has_video
         self.clip = Moviepy.draw_text_in_box_on_video(
-            self.clip, video_text, length, self.height, box_height, move, top
+            self.clip, video_text, length, self.width, self.height, box_height, move, top
         )
 
     @staticmethod
     def draw_text_in_box_on_video(video: med.VideoFileClip, video_text: str,
-                                  length: float, height: int, box_height: int, move: bool,
-                                  top: bool, on_box: bool = True) -> med.CompositeVideoClip:
+                                  length: float, width: int, height: int, box_height: int, move: bool,
+                                  top: bool, on_box: bool = True, center: bool = False,
+                                  interval: Optional[Tuple[float, float]] = None,
+                                  fontsize=30) -> med.CompositeVideoClip:
         """Draws a semi-transparent box either at the top or bottom and writes text in it, optionally scrolling by"""
         clips = [video]
 
         y_location = 0 if top else height - box_height
+        y_location = height / 2 if center else y_location
         video_w, _ = video.size
-        txt_left_margin = 50
 
         if on_box:
             color_clip = med.ColorClip(size=(video_w, box_height), color=(0, 0, 0))
@@ -156,8 +158,13 @@ class Moviepy(pypopquiz.backends.backend.Backend):
             color_clip = color_clip.set_position(pos=(0, y_location))
             clips.append(color_clip)
 
-        txt = med.TextClip(video_text, font='Arial', color='white', fontsize=30)
+        txt = med.TextClip(video_text, font='Arial', color='white', fontsize=fontsize)
         txt_y_location = (box_height - txt.h) // 2 + y_location
+
+        if center:
+            txt_left_margin = (width - txt.w) // 2
+        else:
+            txt_left_margin = 50
 
         # pylint: disable=assignment-from-no-return
         if move:
@@ -167,12 +174,30 @@ class Moviepy(pypopquiz.backends.backend.Backend):
             txt_mov = txt.set_position((txt_left_margin, txt_y_location))
         # pylint: enable=assignment-from-no-return
 
+        if interval:
+            # Fade text in and out
+            fade_duration = 1  # second
+            txt_mov = txt_mov.set_duration(interval[1] - interval[0] + fade_duration * 2)
+            txt_mov = txt_mov.set_start(max(0, interval[0] - fade_duration))
+
+            txt_mov = txt_mov.fx(vfx.fadein, fade_duration).\
+                fx(vfx.fadeout, fade_duration)
+
         clips.append(txt_mov)
 
         duration = video.duration
-        video = med.CompositeVideoClip(clips)
+        video = med.CompositeVideoClip(clips, use_bgclip=interval is not None)
         video.duration = duration
         return video
+
+    def overlay_fading_text(self, text: str, interval: Tuple[float, float]):
+        """Overlay fading text on the clip."""
+        assert self.has_video
+        duration_s = 0  # Don't care
+        self.clip = Moviepy.draw_text_in_box_on_video(
+            self.clip, text, duration_s, self.width, self.height, box_height=100, move=False, top=False,
+            on_box=False, center=True, interval=interval, fontsize=50
+        )
 
     def add_spacer(self, text: str, duration_s: float) -> None:
         """Add a text spacer to the start of the clip."""
@@ -181,7 +206,7 @@ class Moviepy(pypopquiz.backends.backend.Backend):
         color = med.ColorClip(size=(self.width, self.height), color=(0, 0, 0), duration=duration_s)
         color = color.set_fps(30)  # pylint: disable=assignment-from-no-return
         spacer = Moviepy.draw_text_in_box_on_video(
-            color, text, duration_s, self.height, box_height=100, move=True, top=False, on_box=False
+            color, text, duration_s, self.width, self.height, box_height=100, move=True, top=False, on_box=False
         )
         self.clip = med.concatenate_videoclips([spacer, self.clip])
 
@@ -237,8 +262,7 @@ class Moviepy(pypopquiz.backends.backend.Backend):
 
         if not dry_run:
             with Moviepy.tmp_intermediate_file(file_name_out) as tmp_out:
-                self.clip.write_videofile(str(tmp_out))
-                # self.clip.write_videofile(str(tmp_out), threads=2)
+                self.clip.write_videofile(str(tmp_out), threads=2)
 
         # Close the file reader (typically terminates an ffmpeg process)
         self.close_readers()

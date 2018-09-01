@@ -5,7 +5,7 @@ import contextlib
 from pathlib import Path
 import shutil
 import tempfile
-from typing import Generator
+from typing import Generator, Tuple
 
 import pypopquiz as ppq
 import pypopquiz.io
@@ -84,6 +84,10 @@ class Backend(abc.ABC):
 
     def reverse(self) -> None:
         """Reverses an entire audio or video clip."""
+        pass
+
+    def replace_audio_by_beep(self, interval: Tuple[float, float], freq_hz: int = 1500) -> None:
+        """Replace the original audio by a beep in a particular interval."""
         pass
 
     @staticmethod

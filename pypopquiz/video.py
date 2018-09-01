@@ -31,9 +31,15 @@ def get_interval_length(interval: Tuple[int, int]) -> int:
     return interval[1] - interval[0]
 
 
-def filter_stream_video(stream: VideoBackend, kind: str, interval: Tuple[int, int], answer_texts: List[str],
-                        reverse: bool, box_height: int = 100, fade_amount_s: int = 3) -> VideoBackend:
+def filter_stream_video(stream: VideoBackend, kind: str, interval: Tuple[int, int], answer_text: List[str],
+                        reverse: bool, box_height: int = 100, fade_amount_s: int = 3, answer_label_events: Optional[List] = None) -> VideoBackend:
     """Adds ffmpeg filters to the stream, processing a single video stream"""
+    if kind == "answer" and answer_label_events is not None:
+        for event in answer_label_events:
+            evt_interval = event["interval"]
+            interval_sec = pypopquiz.io.get_interval_in_fractional_s(evt_interval)
+            stream.overlay_fading_text(event["answer"], interval=interval_sec)
+
     stream.trim(start_s=interval[0], end_s=interval[1])
     if reverse:
         stream.reverse()
@@ -68,10 +74,11 @@ def filter_stream_videos(stream: VideoBackend, kind: str, round_id: int, questio
 
 
 def filter_stream_audio(stream: VideoBackend, interval: Tuple[int, int], reverse: bool,
-                        fade_amount_s: int = 3, beeps: Optional[List] = None) -> VideoBackend:
+                        fade_amount_s: int = 3, beep_events: Optional[List] = None) -> VideoBackend:
     """Adds ffmpeg filters to the stream, producing a single audio stream"""
-    if beeps is not None:
-        for beep in beeps:
+    if beep_events is not None:
+        for event in beep_events:
+            beep = event["interval"]
             beep_sec = pypopquiz.io.get_interval_in_fractional_s(beep)
             stream.replace_audio_by_beep(interval=beep_sec)
     stream.trim(start_s=interval[0], end_s=interval[1])
@@ -143,6 +150,7 @@ def create_video(kind: str, round_id: int, question: Dict, question_id: int, out
             file_name.unlink()  # deletes a previous version
 
     backend_cls = get_backend(backend)
+    events = question.get("events", [])
 
     # Process the video(s)
     stream_videos = None
@@ -152,8 +160,10 @@ def create_video(kind: str, round_id: int, question: Dict, question_id: int, out
         interval = ppq.io.get_interval_in_s(video_info["interval"])
         total_duration += get_interval_length(interval)
         reverse = video_info.get("reverse", False)
+        answer_label_event_ids = video_info.get("answer_label_events", [])
+        answer_label_events = [x for i, x in enumerate(events) if i in answer_label_event_ids]
         stream_video = backend_cls(video_files[video_id], has_video=True, has_audio=False, width=width, height=height)
-        stream_video = filter_stream_video(stream_video, kind, interval, answer_texts[video_id], reverse)
+        stream_video = filter_stream_video(stream_video, kind, interval, answer_texts[video_id], reverse, answer_label_events=answer_label_events)
         if stream_videos is None:
             stream_videos = stream_video
         else:
@@ -169,10 +179,10 @@ def create_video(kind: str, round_id: int, question: Dict, question_id: int, out
         ppq.io.log("Processing audio input {:d}/{:d}".format(audio_id + 1, len(question[kind+"_audio"])))
         interval = ppq.io.get_interval_in_s(audio_info["interval"])
         reverse = audio_info.get("reverse", False)
-        beeps = audio_info.get("beeps", [])
-        print(audio_info, beeps)
+        beep_event_ids = audio_info.get("beeps_events", [])
+        beep_events = [x for i, x in enumerate(events) if i in beep_event_ids]
         stream_audio = backend_cls(audio_files[audio_id], has_video=False, has_audio=True, width=width, height=height)
-        stream_audio = filter_stream_audio(stream_audio, interval, reverse, beeps=beeps)
+        stream_audio = filter_stream_audio(stream_audio, interval, reverse, beep_events=beep_events)
         if stream_audios is None:
             stream_audios = stream_audio
         else:
