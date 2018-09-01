@@ -9,8 +9,8 @@ import numpy as np
 import moviepy
 import moviepy.editor as med  # pylint: disable=no-name-in-module,import-error
 from moviepy.decorators import audio_video_fx  # pylint: disable=import-error,no-name-in-module
-from med import afx  # pylint: disable=import-error
-from med import vfx  # pylint: disable=import-error
+from moviepy.editor import afx  # pylint: disable=import-error
+from moviepy.editor import vfx  # pylint: disable=import-error
 
 import pypopquiz as ppq
 import pypopquiz.backends.backend

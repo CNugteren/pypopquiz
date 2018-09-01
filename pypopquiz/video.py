@@ -1,7 +1,8 @@
 """Module with all video related functions, using one of the video backends"""
 
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Optional
+import time
 
 import pypopquiz as ppq
 import pypopquiz.io
@@ -67,8 +68,12 @@ def filter_stream_videos(stream: VideoBackend, kind: str, round_id: int, questio
 
 
 def filter_stream_audio(stream: VideoBackend, interval: Tuple[int, int], reverse: bool,
-                        fade_amount_s: int = 3) -> VideoBackend:
+                        fade_amount_s: int = 3, beeps: Optional[List] = None) -> VideoBackend:
     """Adds ffmpeg filters to the stream, producing a single audio stream"""
+    if beeps is not None:
+        for beep in beeps:
+            beep_sec = pypopquiz.io.get_interval_in_fractional_s(beep)
+            stream.replace_audio_by_beep(interval=beep_sec)
     stream.trim(start_s=interval[0], end_s=interval[1])
     if reverse:
         stream.reverse()
@@ -164,8 +169,10 @@ def create_video(kind: str, round_id: int, question: Dict, question_id: int, out
         ppq.io.log("Processing audio input {:d}/{:d}".format(audio_id + 1, len(question[kind+"_audio"])))
         interval = ppq.io.get_interval_in_s(audio_info["interval"])
         reverse = audio_info.get("reverse", False)
+        beeps = audio_info.get("beeps", [])
+        print(audio_info, beeps)
         stream_audio = backend_cls(audio_files[audio_id], has_video=False, has_audio=True, width=width, height=height)
-        stream_audio = filter_stream_audio(stream_audio, interval, reverse)
+        stream_audio = filter_stream_audio(stream_audio, interval, reverse, beeps=beeps)
         if stream_audios is None:
             stream_audios = stream_audio
         else:
