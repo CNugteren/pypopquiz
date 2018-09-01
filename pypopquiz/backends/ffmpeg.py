@@ -136,7 +136,13 @@ class FFMpeg(ppq.backends.backend.Backend):
     def create_empty_stream(cls, duration: int, width: int = 1280, height: int = 720) -> 'FFMpeg':
         """Creates a video of a certain duration with a black still image"""
         still_image = pkg_resources.resource_filename("resources", "still_black.png")
-        stream = cls(Path(still_image), has_video=True, has_audio=False, width=width, height=height,
+        return cls.create_single_image_stream(Path(still_image), duration, width=width, height=height)
+
+    @classmethod
+    def create_single_image_stream(cls, input_image: Path, duration: int,
+                                   width: int = 1280, height: int = 720) -> 'FFMpeg':
+        """Creates a video of a certain duration with a single still image"""
+        stream = cls(input_image, has_video=True, has_audio=False, width=width, height=height,
                      t=duration, framerate=25, loop=1)
         stream.scale_video()
         return stream

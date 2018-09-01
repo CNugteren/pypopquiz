@@ -68,6 +68,12 @@ class Backend(abc.ABC):
         """Creates a video of a certain duration with a black still image"""
         pass
 
+    @classmethod
+    def create_single_image_stream(cls, input_image: Path, duration: int,
+                                   width: int = 1280, height: int = 720) -> 'Backend':
+        """Creates a video of a certain duration with a single still image"""
+        pass
+
     def add_spacer(self, text: str, duration_s: float) -> None:
         """Add a text spacer to the start of the video clip."""
         pass
