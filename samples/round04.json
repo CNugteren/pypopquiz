@@ -14,7 +14,7 @@
       "question_audio": [{"source": 0, "interval": ["0:19", "0:34"]}],
       "answer_video": [{"source": 0, "interval": ["0:15", "0:31"]}],
       "answer_audio": [{"source": 0, "interval": ["0:15", "0:31"]}],
-      "answers": [{"artist": "Nirvana", "title": "Lithium", "text": "(I'm so ugly)"}]
+      "answers": [{"artist": "Nirvana", "title": "Lithium", "text": "I'm so ugly"}]
     },
     {
       "sources": [
@@ -25,7 +25,7 @@
       "question_audio": [{"source": 0, "interval": ["1:07", "1:37"]}],
       "answer_video": [{"source": 0, "interval": ["1:02", "1:37"]}],
       "answer_audio": [{"source": 0, "interval": ["1:02", "1:37"]}],
-      "answers": [{"artist": "Celine Dion", "title": "My Heart Will Go On", "text": "(Wherever you are))"}]
+      "answers": [{"artist": "Celine Dion", "title": "My Heart Will Go On", "text": "Wherever you are"}]
     }
   ]
 }

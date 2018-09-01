@@ -30,8 +30,8 @@ def get_interval_length(interval: Tuple[int, int]) -> int:
     return interval[1] - interval[0]
 
 
-def filter_stream_video(stream: VideoBackend, kind: str, interval: Tuple[int, int], answer_text: str, reverse: bool,
-                        box_height: int = 100, fade_amount_s: int = 3) -> VideoBackend:
+def filter_stream_video(stream: VideoBackend, kind: str, interval: Tuple[int, int], answer_texts: List[str],
+                        reverse: bool, box_height: int = 100, fade_amount_s: int = 3) -> VideoBackend:
     """Adds ffmpeg filters to the stream, processing a single video stream"""
     stream.trim(start_s=interval[0], end_s=interval[1])
     if reverse:
@@ -39,7 +39,12 @@ def filter_stream_video(stream: VideoBackend, kind: str, interval: Tuple[int, in
     stream.fade_in_and_out(fade_amount_s, get_interval_length(interval))
     stream.scale_video()
     if kind == "answer":
+        # (up to the) first two answers are joined together with " - " and shown at the top
+        answer_text = " - ".join(answer_texts[:2])
         stream.draw_text_in_box(answer_text, get_interval_length(interval), box_height, move=False, top=True)
+        # Remainder is shown in the center of the video
+        for text_id, answer_text in enumerate(answer_texts[2:]):
+            stream.draw_text(answer_text, 0.5 - 0.1 * len(answer_texts[2:]) + 0.2 * text_id)
     return stream
 
 
@@ -100,7 +105,8 @@ def get_sources(question: Dict, media: str, kind: str) -> List[Dict]:
     return [sources[source_index] for source_index in source_indices]
 
 
-def create_video(kind: str, round_id: int, question: Dict, question_id: int, output_dir: Path, answer_texts: List[str],
+def create_video(kind: str, round_id: int, question: Dict, question_id: int, output_dir: Path,
+                 answer_texts: List[List[str]],
                  width: int = 1280, height: int = 720, backend: str = 'ffmpeg', spacer_txt: str = "",
                  use_cached_video_files: bool = False, is_example: bool = False) -> Path:
     """Creates a video for one question, either a question or an answer video"""
