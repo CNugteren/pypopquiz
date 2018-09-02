@@ -51,8 +51,6 @@ def substitute_variables(data: Dict) -> None:
             var_dict = question["variables"]
             substitute_variables_in_dict(question, var_dict)
 
-    print(data)
-
 
 def substitute_variables_in_dict(elems: Dict, var_dict: Dict) -> None:
     """Iterate over items in the dictionary, substitute in each item."""
@@ -64,7 +62,7 @@ def substitute_variables_in_dict(elems: Dict, var_dict: Dict) -> None:
 
 def substitute_variables_in_list(lst: List, var_dict: Dict) -> None:
     """Iterate over elements in the list, substitute in each item."""
-    for i, item in lst:
+    for i, item in enumerate(lst):
         substitute_variables_kernel(lst, i, item, var_dict)
 
 

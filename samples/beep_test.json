@@ -1,0 +1,30 @@
+{
+  "round": 7,
+  "theme": "Piepjes",
+  "questioned": ["artist", "title"],
+  "use_cached_video_files": false,
+  "spacers": "... Get Ready ...",
+  "background_image": "background.png",
+  "first_question_is_example": true,
+  "questions": [
+    {
+      "variables": {
+        "beeps": [{
+          "interval": ["0:35.7", "0:36.3"],
+          "answer": "Avicii"
+        }, {
+          "interval": ["0:42.9", "0:43.9"],
+          "answer": "L.A."
+        }]
+      },
+      "answers": [{"artist": "Mike Posner", "title": "I Took a Pill in Ibiza (Seeb Remix)"}],
+      "sources": [
+        {"source": "youtube", "identifier": "foE1mO2yM04", "format": "mp4"}
+      ],
+      "question_video": [{"source": 0, "interval": ["0:32", "0:47"], "repetitions": 1}],
+      "question_audio": [{"source": 0, "interval": ["0:32", "0:47"], "repetitions": 1, "beeps_events": "var:beeps"}],
+      "answer_video": [{"source": 0, "interval": ["0:32", "0:47"], "repetitions": 1, "answer_label_events": "var:beeps"}],
+      "answer_audio": [{"source": 0, "interval": ["0:32", "0:47"], "repetitions": 1}]
+    }
+  ]
+}
