@@ -36,5 +36,7 @@ def get_source(source_data: Dict[str, Any], output_dir: Path, input_dir: Path) -
         input_file.rename(output_dir / ppq.io.SOURCES_BASE_FOLDER)
     elif source_type == "text":
         ppq.video.create_text_video(output_file, source_data["text"], source_data["duration"])
+    elif source_type == "image":
+        ppq.video.create_video_from_single_image(output_file, source_data["identifier"], source_data["duration"])
     else:
         raise KeyError("Unsupported source(s) '{:s}'".format(source_type))

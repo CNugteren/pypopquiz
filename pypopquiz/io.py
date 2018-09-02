@@ -180,9 +180,13 @@ def verify_input(input_data: Dict) -> None:
             if source["source"] == "youtube":
                 if source_keys != {"format"}:
                     raise ValueError("Missing source keys from Youtube source {:s}".format(str(source)))
-            if source["source"] == "text":
+            elif source["source"] == "text":
                 if source_keys != {"text", "duration"}:
                     raise ValueError("Missing source keys from text source {:s}".format(str(source)))
+                source["format"] = "mp4"  # default format
+            elif source["source"] == "image":
+                if source_keys != {"duration"}:
+                    raise ValueError("Missing source keys from image source {:s}".format(str(source)))
                 source["format"] = "mp4"  # default format
         if len(question["answers"]) != len(question["answer_video"]):
             raise ValueError("Expected {:d} answers, got {:d}".

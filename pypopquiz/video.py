@@ -205,3 +205,11 @@ def create_text_video(file_name: Path, source_texts: List[str], duration: int,
     for text_id, source_text in enumerate(source_texts):
         stream.draw_text(source_text, 0.5 - 0.1 * num_texts + 0.2 * text_id)
     stream.run(file_name)
+
+
+def create_video_from_single_image(file_name: Path, input_image: Path, duration: int,
+                                   width: int = 1280, height: int = 720, backend: str = 'ffmpeg') -> None:
+    """Generates a video with a specific background"""
+    backend_cls = get_backend(backend)
+    stream = backend_cls.create_single_image_stream(input_image, duration, width=width, height=height)
+    stream.run(file_name)
