@@ -167,13 +167,7 @@ def verify_input(input_data: Dict) -> None:
                                 "properties": {
                                     "source": {"type": "number"},
                                     "interval": {"type": "array"},
-                                    "reverse": {"type": "boolean"},
-                                    "beeps": {
-                                        "type": "array",
-                                        "items": {
-                                            "type": "array"
-                                        }
-                                    }
+                                    "reverse": {"type": "boolean"}
                                 }
                             }
                         },
