@@ -151,7 +151,6 @@ def create_video(kind: str, round_id: int, question: Dict, question_id: int, out
             file_name.unlink()  # deletes a previous version
 
     backend_cls = get_backend(backend)
-    events = question.get("events", [])
 
     # Process the video(s)
     stream_videos = None
@@ -161,8 +160,7 @@ def create_video(kind: str, round_id: int, question: Dict, question_id: int, out
         interval = ppq.io.get_interval_in_s(video_info["interval"])
         total_duration += get_interval_length(interval)
         reverse = video_info.get("reverse", False)
-        answer_label_event_ids = video_info.get("answer_label_events", [])
-        answer_label_events = [x for i, x in enumerate(events) if i in answer_label_event_ids]
+        answer_label_events = video_info.get("answer_label_events", [])
         stream_video = backend_cls(video_files[video_id], has_video=True, has_audio=False, width=width, height=height)
         stream_video = filter_stream_video(stream_video, kind, interval, answer_texts[video_id],
                                            reverse, answer_label_events=answer_label_events)
@@ -181,8 +179,7 @@ def create_video(kind: str, round_id: int, question: Dict, question_id: int, out
         ppq.io.log("Processing audio input {:d}/{:d}".format(audio_id + 1, len(question[kind+"_audio"])))
         interval = ppq.io.get_interval_in_s(audio_info["interval"])
         reverse = audio_info.get("reverse", False)
-        beep_event_ids = audio_info.get("beeps_events", [])
-        beep_events = [x for i, x in enumerate(events) if i in beep_event_ids]
+        beep_events = audio_info.get("beeps_events", [])
         stream_audio = backend_cls(audio_files[audio_id], has_video=False, has_audio=True, width=width, height=height)
         stream_audio = filter_stream_audio(stream_audio, interval, reverse, beep_events=beep_events)
         if stream_audios is None:
