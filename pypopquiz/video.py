@@ -2,7 +2,6 @@
 
 from pathlib import Path
 from typing import Dict, List, Tuple, Optional
-import time
 
 import pypopquiz as ppq
 import pypopquiz.io

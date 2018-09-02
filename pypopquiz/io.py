@@ -123,7 +123,7 @@ def verify_input(input_data: Dict) -> None:
                 "items": {
                     "type": "object",
                     "required": ["sources", "question_video", "question_audio",
-                                 "answer_video", "answer_audio", "answers", "variables"],
+                                 "answer_video", "answer_audio", "answers"],
                     "properties": {
                         "sources": {
                             "type": "array",
