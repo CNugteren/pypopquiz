@@ -40,24 +40,19 @@ def tone_in_interval(clip: med.AudioClip, interval: Tuple[float, float], freq_hz
             t = typing.cast(float, t)  # pylint: disable=invalid-name
             if interval[0] < t < interval[1]:
                 t_offset = t - interval[0]
-                out = [np.sin(freq_hz * np.pi * t_offset)]
-            else:
-                out = original
-        else:
-            selector0 = interval[0] < t
-            selector1 = interval[1] > t
-            selector = np.logical_and(selector0, selector1)
+                return [np.sin(freq_hz * np.pi * t_offset)]
 
-            t_offset = t - interval[0]
-            tone = np.array(np.sin(freq_hz * np.pi * t_offset))
+            # Tone is not active:
+            return original
 
-            channels_out = []
-            channels = original.T
-            for channel in channels:
-                channels_out.append(np.where(selector, tone, channel))
+        # t is an array of timestamps:
+        selector = np.logical_and(interval[0] < t, interval[1] > t)
+        t_offset = t - interval[0]
+        tone = np.array(np.sin(freq_hz * np.pi * t_offset))
 
-            out = np.vstack(channels_out).T
-        return out
+        channels_out = [np.where(selector, tone, channel) for channel in original.T]
+        return np.vstack(channels_out).T
+
     return clip.fl(beeped, keep_duration=True)
 
 

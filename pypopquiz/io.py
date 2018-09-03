@@ -2,9 +2,12 @@
 
 import json
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Tuple, Union
+from typing import Dict, Iterable, List, Tuple
 
 import jsonschema
+
+import pypopquiz as ppq
+import pypopquiz.iovarsubs
 
 SOURCES_BASE_FOLDER = "sources"
 
@@ -42,54 +45,6 @@ def get_interval_duration(interval: Tuple[str, str]) -> int:
 def total_duration(clips: List[Dict]) -> int:
     """Calculate the total duration of a list of clip specifications."""
     return sum((get_interval_duration(item["interval"]) for item in clips))
-
-
-def substitute_variables(data: Dict) -> None:
-    """Look for variable references, and substitute their values in the data structure."""
-    for question in data["questions"]:
-        if "variables" in question:
-            var_dict = question["variables"]
-            substitute_variables_in_dict(question, var_dict)
-
-
-def substitute_variables_in_dict(elems: Dict, var_dict: Dict) -> None:
-    """Iterate over items in the dictionary, substitute in each item."""
-    for key, item in elems.items():
-        if key == 'variables':
-            continue
-        substitute_variables_kernel(elems, key, item, var_dict)
-
-
-def substitute_variables_in_list(lst: List, var_dict: Dict) -> None:
-    """Iterate over elements in the list, substitute in each item."""
-    for i, item in enumerate(lst):
-        substitute_variables_kernel(lst, i, item, var_dict)
-
-
-def substitute_variables_kernel(parent: Union[Dict, List], key: Any, item: Any, var_dict: Dict) -> None:
-    """Inspect item, iterate further or substitute variables ."""
-    if isinstance(item, list):
-        substitute_variables_in_list(item, var_dict)
-
-    elif isinstance(item, dict):
-        substitute_variables_in_dict(item, var_dict)
-
-    elif isinstance(item, str):
-        sub = get_substitute_variable(item, var_dict)
-        if sub is not None:
-            parent[key] = sub
-
-
-def get_substitute_variable(val: str, var_dict: Dict) -> Any:
-    """Return substitution for variable reference in str, or None if it is not found."""
-    var_marker = 'var:'
-    if val.startswith(var_marker):
-        var_name = val[len(var_marker):]
-
-        if var_name in var_dict:
-            return var_dict[var_name]
-
-    return None
 
 
 def verify_input(input_data: Dict) -> None:
@@ -167,7 +122,8 @@ def verify_input(input_data: Dict) -> None:
                                 "properties": {
                                     "source": {"type": "number"},
                                     "interval": {"type": "array"},
-                                    "reverse": {"type": "boolean"}
+                                    "reverse": {"type": "boolean"},
+                                    "beeps_events": {"type": "string"}
                                 }
                             }
                         },
@@ -183,7 +139,8 @@ def verify_input(input_data: Dict) -> None:
                                 "properties": {
                                     "source": {"type": "number"},
                                     "interval": {"type": "array"},
-                                    "reverse": {"type": "boolean"}
+                                    "reverse": {"type": "boolean"},
+                                    "answer_label_events": {"type": "string"}
                                 }
                             }
                         },
@@ -210,6 +167,9 @@ def verify_input(input_data: Dict) -> None:
                                 "type": "object",
                                 "additionalProperties": True,
                             }
+                        },
+                        "variables": {
+                            "type": "object"
                         }
                     }
                 }
@@ -217,7 +177,7 @@ def verify_input(input_data: Dict) -> None:
         }
     }
     jsonschema.validate(input_data, schema)
-    substitute_variables(input_data)
+    ppq.iovarsubs.substitute_variables(input_data)
 
     # Sets intervals to the full duration if not specified
     for index, question in enumerate(input_data["questions"]):

@@ -1,6 +1,6 @@
 {
   "round": 7,
-  "theme": "Piepjes",
+  "theme": "Beeps",
   "questioned": ["artist", "title"],
   "use_cached_video_files": false,
   "spacers": "... Get Ready ...",
