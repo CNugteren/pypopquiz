@@ -222,4 +222,5 @@ def write_lines(text: Iterable[str], file_name: Path) -> None:
 
 def get_source_file_name(source_data: Dict[str, str]) -> Path:
     """Constructs the name of the source file on disk"""
-    return Path(SOURCES_BASE_FOLDER) / Path(source_data["identifier"] + "." + source_data["format"])
+    duration = "_{:d}".format(source_data["duration"]) if "duration" in source_data else ""
+    return Path(SOURCES_BASE_FOLDER) / Path(source_data["identifier"] + duration + "." + source_data["format"])
