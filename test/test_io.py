@@ -4,11 +4,12 @@ from pathlib import Path
 
 import pypopquiz as ppq
 import pypopquiz.io
+import pypopquiz.iovarsubs
 
 
 class TestIO(unittest.TestCase):
 
-    SAMPLE_FILES = [Path("samples/round01.json"), Path("samples/round02.json")]
+    SAMPLE_FILES = [Path("samples/round{:02d}.json".format(round_id)) for round_id in (1, 2, 3, 4, 7)]
 
     def test_read_input(self) -> None:
         for sample_file in self.SAMPLE_FILES:
@@ -17,8 +18,8 @@ class TestIO(unittest.TestCase):
 
     def test_verify_input(self) -> None:
         for sample_file in self.SAMPLE_FILES:
-            result = ppq.io.read_input(sample_file)
-            ppq.io.verify_input(result)  # should not raise an assert
+            ppq.io.log("Testing sample '{:s}'".format(str(sample_file)))
+            ppq.io.read_input(sample_file)  # should not raise an assert
 
     def test_get_interval_in_s(self) -> None:
         self.assertEqual(ppq.io.get_interval_in_s(("0:10", "1:11")), (10, 71))

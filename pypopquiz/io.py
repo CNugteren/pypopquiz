@@ -47,10 +47,8 @@ def total_duration(clips: List[Dict]) -> int:
     return sum((get_interval_duration(item["interval"]) for item in clips))
 
 
-def verify_input(input_data: Dict) -> None:
+def verify_schema(input_data: Dict) -> None:
     """Verifies that the input JSON is valid. If not, raises an error indicating the mistake"""
-    # pylint: disable=too-many-branches
-
     schema = {
         "$schema": "http://json-schema.org/draft-04/schema#",
         "type": "object",
@@ -177,9 +175,10 @@ def verify_input(input_data: Dict) -> None:
         }
     }
     jsonschema.validate(input_data, schema)
-    ppq.iovarsubs.substitute_variables(input_data)
 
-    # Sets intervals to the full duration if not specified
+
+def set_missing_intervals(input_data: Dict) -> None:
+    """Set intervals to the full duration if not specified"""
     for index, question in enumerate(input_data["questions"]):
         for sub_type in ("question_video", "question_audio", "answer_video", "answer_audio"):
             for sub_item in question[sub_type]:
@@ -194,6 +193,10 @@ def verify_input(input_data: Dict) -> None:
                         sub_item["interval"] = ["0:00", "{:d}:{:2d}".format(minutes, seconds)]
                         log("Set duration for question {:d}'s '{:s}' to {:s}".
                             format(index, sub_type, str(sub_item["interval"])))
+
+
+def verify_json_input(input_data: Dict) -> None:
+    """Verifies that the input JSON values are valid. If not, raises an error indicating the mistake"""
 
     # Additional constraints on the input
     for question in input_data["questions"]:
@@ -233,7 +236,10 @@ def read_input(file_name: Path) -> Dict:
     """Reads and validates a popquiz input JSON file"""
     with file_name.open() as json_data:
         input_data = json.load(json_data)
-        verify_input(input_data)
+        verify_schema(input_data)
+        ppq.iovarsubs.substitute_variables(input_data)
+        set_missing_intervals(input_data)
+        verify_json_input(input_data)
         return input_data
 
 
