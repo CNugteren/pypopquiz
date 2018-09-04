@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 from typing import Dict, Iterable, List, Tuple
 
+import pkg_resources
 import jsonschema
 
 import pypopquiz as ppq
@@ -75,8 +76,7 @@ def verify_schema(input_data: Dict) -> None:
                 "additionalProperties": False,
                 "items": {
                     "type": "object",
-                    "required": ["sources", "question_video", "question_audio",
-                                 "answer_video", "answer_audio", "answers"],
+                    "required": ["sources", "question_audio", "answer_audio", "answers"],
                     "properties": {
                         "sources": {
                             "type": "array",
@@ -177,10 +177,19 @@ def verify_schema(input_data: Dict) -> None:
     jsonschema.validate(input_data, schema)
 
 
+def get_missing_interval(duration: int) -> List[str]:
+    """Sets an interval to the total length based on a duration"""
+    minutes = duration // 60
+    seconds = duration % 60
+    return ["0:00", "{:d}:{:2d}".format(minutes, seconds)]
+
+
 def set_missing_intervals(input_data: Dict) -> None:
     """Set intervals to the full duration if not specified"""
     for index, question in enumerate(input_data["questions"]):
         for sub_type in ("question_video", "question_audio", "answer_video", "answer_audio"):
+            if sub_type not in question:
+                continue
             for sub_item in question[sub_type]:
                 source_index = sub_item["source"]
                 if "interval" not in sub_item.keys():
@@ -188,11 +197,25 @@ def set_missing_intervals(input_data: Dict) -> None:
                     if "duration" not in source.keys():
                         raise ValueError("Missing interval for question {:d}'s '{:s}'".format(index, sub_type))
                     else:
-                        minutes = source["duration"] // 60
-                        seconds = source["duration"] % 60
-                        sub_item["interval"] = ["0:00", "{:d}:{:2d}".format(minutes, seconds)]
+                        sub_item["interval"] = get_missing_interval(source["duration"])
                         log("Set duration for question {:d}'s '{:s}' to {:s}".
                             format(index, sub_type, str(sub_item["interval"])))
+
+
+def set_missing_media(input_data: Dict) -> None:
+    """Sets missing video data as 'empty' input"""
+    for question in input_data["questions"]:
+        for sub_type in ("question_video", "answer_video"):
+            if sub_type not in question:
+                other_type = sub_type.replace("_video", "_audio")
+                if other_type not in question:
+                    raise ValueError("Missing both '{:s}' and '{:s}'".format(sub_type, other_type))
+
+                duration = total_duration(question[other_type])
+                source_id = len(question["sources"])
+                still_image = pkg_resources.resource_filename("resources", "still_black.png")
+                question["sources"].append({"source": "image", "identifier": still_image, "duration": duration})
+                question[sub_type] = [{"source": source_id, "interval": get_missing_interval(duration)}]
 
 
 def verify_json_input(input_data: Dict) -> None:
@@ -239,6 +262,7 @@ def read_input(file_name: Path) -> Dict:
         verify_schema(input_data)
         ppq.iovarsubs.substitute_variables(input_data)
         set_missing_intervals(input_data)
+        set_missing_media(input_data)
         verify_json_input(input_data)
         return input_data
 
