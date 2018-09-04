@@ -6,6 +6,9 @@ from typing import Dict, Iterable, List, Tuple
 
 import jsonschema
 
+import pypopquiz as ppq
+import pypopquiz.iovarsubs
+
 SOURCES_BASE_FOLDER = "sources"
 
 
@@ -16,8 +19,21 @@ def log(message: str) -> None:
 
 def get_interval_in_s(interval: Tuple[str, str]) -> Tuple[int, int]:
     """Converts an interval in string form (e.g. [1:10, 2:30] in seconds, e.g. [70, 150] seconds"""
-    return (int(interval[0].split(":")[0]) * 60 + int(interval[0].split(":")[1]),
-            int(interval[1].split(":")[0]) * 60 + int(interval[1].split(":")[1]))
+    return (int(interval[0].split(":")[0]) * 60 + int(interval[0].split(":")[1][:2]),
+            int(interval[1].split(":")[0]) * 60 + int(interval[1].split(":")[1][:2]))
+
+
+def get_interval_in_fractional_s(interval: Tuple[str, str]) -> Tuple[float, float]:
+    """Converts an interval in string form (e.g. [1:10, 2:30] in seconds, e.g. [70, 150] seconds"""
+    seconds = get_interval_in_s(interval)
+    out = [float(s) for s in seconds]
+    for part in (0, 1):
+        fsec = interval[part].split('.')
+        out[part] = float(seconds[part])
+        if len(fsec) == 2:
+            out[part] += float('0.' + fsec[1])
+
+    return (out[0], out[1])
 
 
 def get_interval_duration(interval: Tuple[str, str]) -> int:
@@ -106,7 +122,8 @@ def verify_input(input_data: Dict) -> None:
                                 "properties": {
                                     "source": {"type": "number"},
                                     "interval": {"type": "array"},
-                                    "reverse": {"type": "boolean"}
+                                    "reverse": {"type": "boolean"},
+                                    "beeps_events": {"type": "string"}
                                 }
                             }
                         },
@@ -122,7 +139,8 @@ def verify_input(input_data: Dict) -> None:
                                 "properties": {
                                     "source": {"type": "number"},
                                     "interval": {"type": "array"},
-                                    "reverse": {"type": "boolean"}
+                                    "reverse": {"type": "boolean"},
+                                    "answer_label_events": {"type": "string"}
                                 }
                             }
                         },
@@ -149,6 +167,9 @@ def verify_input(input_data: Dict) -> None:
                                 "type": "object",
                                 "additionalProperties": True,
                             }
+                        },
+                        "variables": {
+                            "type": "object"
                         }
                     }
                 }
@@ -156,6 +177,7 @@ def verify_input(input_data: Dict) -> None:
         }
     }
     jsonschema.validate(input_data, schema)
+    ppq.iovarsubs.substitute_variables(input_data)
 
     # Sets intervals to the full duration if not specified
     for index, question in enumerate(input_data["questions"]):
