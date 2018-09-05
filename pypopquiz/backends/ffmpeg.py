@@ -16,7 +16,7 @@ class FFMpeg(ppq.backends.backend.Backend):
     """FFMPEG backend, implements interface from base-class"""
 
     def __init__(self, source_file: Path, has_video: bool, has_audio: bool,
-                 display_graph: bool = False, width: int = 1280, height: int = 720, **kwargs: Any) -> None:
+                 width: int, height: int, display_graph: bool = False, **kwargs: Any) -> None:
         super().__init__(has_video, has_audio, width, height)
         stream = ffmpeg.input(str(source_file), **kwargs)
         self.display_graph = display_graph
@@ -133,14 +133,14 @@ class FFMpeg(ppq.backends.backend.Backend):
         return file_name
 
     @classmethod
-    def create_empty_stream(cls, duration: int, width: int = 1280, height: int = 720) -> 'FFMpeg':
+    def create_empty_stream(cls, duration: int, width: int, height: int) -> 'FFMpeg':
         """Creates a video of a certain duration with a black still image"""
         still_image = pkg_resources.resource_filename("resources", "still_black.png")
         return cls.create_single_image_stream(Path(still_image), duration, width=width, height=height)
 
     @classmethod
     def create_single_image_stream(cls, input_image: Path, duration: int,
-                                   width: int = 1280, height: int = 720) -> 'FFMpeg':
+                                   width: int, height: int) -> 'FFMpeg':
         """Creates a video of a certain duration with a single still image"""
         stream = cls(input_image, has_video=True, has_audio=False, width=width, height=height,
                      t=duration, framerate=25, loop=1)

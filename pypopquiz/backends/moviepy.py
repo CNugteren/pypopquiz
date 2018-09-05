@@ -60,7 +60,7 @@ class Moviepy(pypopquiz.backends.backend.Backend):
     """Moviepy backend."""
 
     def __init__(self, source_file: Path, has_video: bool, has_audio: bool,
-                 width: int = 1280, height: int = 720) -> None:
+                 width: int, height: int) -> None:
         super().__init__(has_video, has_audio, width, height)
         # Keep a reference to the original object that read input files.
         # moviepy leaks process references even if these objects go out of scope,

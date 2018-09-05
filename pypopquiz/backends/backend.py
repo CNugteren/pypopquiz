@@ -14,7 +14,7 @@ import pypopquiz.io
 class Backend(abc.ABC):
     """Abstract class to specify the backend interface"""
 
-    def __init__(self, has_video: bool, has_audio: bool, width: int = 1280, height: int = 720) -> None:
+    def __init__(self, has_video: bool, has_audio: bool, width: int, height: int) -> None:
         self.has_video = has_video
         self.has_audio = has_audio
         self.width = width
@@ -64,13 +64,13 @@ class Backend(abc.ABC):
         pass
 
     @classmethod
-    def create_empty_stream(cls, duration: int, width: int = 1280, height: int = 720) -> 'Backend':
+    def create_empty_stream(cls, duration: int, width: int, height: int) -> 'Backend':
         """Creates a video of a certain duration with a black still image"""
         pass
 
     @classmethod
     def create_single_image_stream(cls, input_image: Path, duration: int,
-                                   width: int = 1280, height: int = 720) -> 'Backend':
+                                   width: int, height: int) -> 'Backend':
         """Creates a video of a certain duration with a single still image"""
         pass
 

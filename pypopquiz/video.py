@@ -118,8 +118,8 @@ def get_sources(question: Dict, media: str, kind: str) -> List[Dict]:
 
 
 def create_video(kind: str, round_id: int, question: Dict, question_id: int, output_dir: Path,
-                 answer_texts: List[List[str]],
-                 width: int = 1280, height: int = 720, backend: str = 'ffmpeg', spacer_txt: str = "",
+                 answer_texts: List[List[str]], width: int, height: int,
+                 backend: str = 'ffmpeg', spacer_txt: str = "",
                  use_cached_video_files: bool = False, is_example: bool = False) -> Path:
     """Creates a video for one question, either a question or an answer video"""
     # pylint: disable=too-many-locals,too-many-statements
@@ -196,15 +196,15 @@ def create_video(kind: str, round_id: int, question: Dict, question_id: int, out
     return file_name_out
 
 
-def combine_videos(video_files: List[Path], kind: str, round_id: int, output_dir: Path,
+def combine_videos(video_files: List[Path], kind: str, round_id: int, output_dir: Path, width: int, height: int,
                    backend: str = 'ffmpeg') -> None:
     """Combines a list of video files together into a single video"""
     backend_cls = get_backend(backend)
 
     assert video_files  # assumes at least one item
-    stream = backend_cls(video_files[0], has_video=True, has_audio=True)
+    stream = backend_cls(video_files[0], has_video=True, has_audio=True, width=width, height=height)
     for video_file in video_files[1:]:
-        new_stream = backend_cls(video_file, has_video=True, has_audio=True)
+        new_stream = backend_cls(video_file, has_video=True, has_audio=True, width=width, height=height)
         stream.combine(new_stream)
 
     file_name = output_dir / ("{:02d}_{:s}{:s}".format(round_id, kind, video_files[0].suffix))
@@ -212,7 +212,7 @@ def combine_videos(video_files: List[Path], kind: str, round_id: int, output_dir
 
 
 def create_text_video(file_name: Path, source_texts: List[str], duration: int,
-                      width: int = 1280, height: int = 720, backend: str = 'ffmpeg') -> None:
+                      width: int, height: int, backend: str = 'ffmpeg') -> None:
     """Generates a video with text on a black background"""
     backend_cls = get_backend(backend)
     stream = backend_cls.create_empty_stream(duration, width=width, height=height)
@@ -223,7 +223,7 @@ def create_text_video(file_name: Path, source_texts: List[str], duration: int,
 
 
 def create_video_from_single_image(file_name: Path, input_image: Path, duration: int,
-                                   width: int = 1280, height: int = 720, backend: str = 'ffmpeg') -> None:
+                                   width: int, height: int, backend: str = 'ffmpeg') -> None:
     """Generates a video with a specific background"""
     backend_cls = get_backend(backend)
     stream = backend_cls.create_single_image_stream(input_image, duration, width=width, height=height)
