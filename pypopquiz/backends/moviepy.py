@@ -58,9 +58,10 @@ def tone_in_interval(clip: med.AudioClip, interval: Tuple[float, float], freq_hz
 
 class Moviepy(pypopquiz.backends.backend.Backend):
     """Moviepy backend."""
+    DEFAULT_FPS = 30
 
     def __init__(self, source_file: Path, has_video: bool, has_audio: bool,
-                 width: int, height: int) -> None:
+                 width: int, height: int, duration: Optional[float] = None) -> None:
         super().__init__(has_video, has_audio, width, height)
         # Keep a reference to the original object that read input files.
         # moviepy leaks process references even if these objects go out of scope,
@@ -74,20 +75,37 @@ class Moviepy(pypopquiz.backends.backend.Backend):
                 audio = med.AudioFileClip(str(source_file))
                 self.reader_refs.append(audio)
 
-                self.clip = med.ColorClip(size=(width, height), color=(0, 0, 0), duration=audio.duration)
+                self.clip = self.create_color_clip((width, height), (0, 0, 0), audio.duration)
                 self.clip = self.clip.set_audio(audio)
-                # Need to select something as the fps (colorclip has no inherent framerate)
-                self.clip = self.clip.set_fps(24)
             else:
                 # Assume video otherwise
                 self.clip = med.VideoFileClip(str(source_file), audio=has_audio)
                 self.reader_refs.append(self.clip)
 
-        else:
-            assert has_audio
+        elif has_audio:
             # Work only on audio from here on out
             self.clip = med.AudioFileClip(str(source_file))
             self.reader_refs.append(self.clip)
+        else:
+            # Blank video
+            assert duration is not None
+            duration = typing.cast(float, duration)
+            self.clip = self.create_color_clip((width, height), (0, 0, 0), duration)
+            self.has_video = True
+
+    @classmethod
+    def create_empty_stream(cls, duration: int, width: int, height: int) -> 'Moviepy':
+        """Creates a video of a certain duration with a black still image"""
+        return cls(source_file=Path(''), has_video=False, has_audio=False, width=width, height=height,
+                   duration=duration)
+
+    @staticmethod
+    def create_color_clip(size: Tuple[int, int], color: Tuple[int, int, int], duration: float) -> med.ColorClip:
+        """Create a new color clip with a valid FPS."""
+        clip = med.ColorClip(size=size, color=color, duration=duration)
+        # Need to select something as the fps (colorclip has no inherent framerate)
+        clip = clip.set_fps(Moviepy.DEFAULT_FPS)  # pylint: disable=assignment-from-no-return
+        return clip
 
     def trim(self, start_s: int, end_s: int) -> None:
         """Trims a video to a given start and end time measured in seconds"""
@@ -128,6 +146,17 @@ class Moviepy(pypopquiz.backends.backend.Backend):
         assert self.has_video
         self.clip = self.clip.fx(vfx.resize, (self.width, self.height))  # TODO: padding with black
 
+    def draw_text(self, video_text: str, height_fraction: float) -> None:
+        """Draws text in the center of the video at a certain height fraction"""
+        assert self.has_video
+        duration_s = 0  # Don't care, uses interval
+        interval = (0, self.clip.duration)
+        self.clip = Moviepy.draw_text_in_box_on_video(
+            self.clip, video_text, duration_s, self.width, self.height, box_height=self.get_box_height(),
+            move=False, top=False, on_box=False, center=True, vpos=height_fraction,
+            interval=interval, fontsize=self.get_font_size()
+        )
+
     def draw_text_in_box(self, video_text: str, length: int, move: bool, top: bool) -> None:
         """Draws a semi-transparent box either at the top or bottom and writes text in it, optionally scrolling by"""
         assert self.has_video
@@ -139,6 +168,7 @@ class Moviepy(pypopquiz.backends.backend.Backend):
     def draw_text_in_box_on_video(video: med.VideoFileClip, video_text: str,
                                   length: float, width: int, height: int, box_height: int, move: bool,
                                   top: bool, on_box: bool = True, center: bool = False,
+                                  vpos: Optional[float] = None,
                                   interval: Optional[Tuple[float, float]] = None,
                                   fontsize=30) -> med.CompositeVideoClip:
         """Draws a semi-transparent box either at the top or bottom and writes text in it, optionally scrolling by"""
@@ -146,6 +176,10 @@ class Moviepy(pypopquiz.backends.backend.Backend):
 
         y_location = 0 if top else height - box_height
         y_location = height // 2 if center else y_location
+
+        if vpos is not None:
+            y_location = int(height * vpos)
+
         video_w, _ = video.size
 
         if on_box:
@@ -200,7 +234,7 @@ class Moviepy(pypopquiz.backends.backend.Backend):
         assert self.has_video
         # create a black screen, of duration_s seconds.
         color = med.ColorClip(size=(self.width, self.height), color=(0, 0, 0), duration=duration_s)
-        color = color.set_fps(30)  # pylint: disable=assignment-from-no-return
+        color = color.set_fps(Moviepy.DEFAULT_FPS)  # pylint: disable=assignment-from-no-return
         spacer = Moviepy.draw_text_in_box_on_video(
             color, text, duration_s, self.width, self.height, box_height=self.get_box_height(),
             move=True, top=False, on_box=False
