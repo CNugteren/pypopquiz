@@ -18,10 +18,8 @@
     },
     {
       "sources": [
-        {"source": "youtube", "identifier": "rn_YodiJO6k", "format": "mp4"},
-        {"source": "image", "identifier": "background.png", "duration": 27}
+        {"source": "youtube", "identifier": "rn_YodiJO6k", "format": "mp4"}
       ],
-      "question_video": [{"source": 1}],
       "question_audio": [{"source": 0, "interval": ["1:59", "2:26"], "reverse": true}],
       "answer_video": [{"source": 0, "interval": ["1:59", "2:26"]}],
       "answer_audio": [{"source": 0, "interval": ["1:59", "2:26"]}],
@@ -29,10 +27,8 @@
     },
     {
       "sources": [
-        {"source": "youtube", "identifier": "SwYN7mTi6HM", "format": "mp4"},
-        {"source": "image", "identifier": "background.png", "duration": 16}
+        {"source": "youtube", "identifier": "SwYN7mTi6HM", "format": "mp4"}
       ],
-      "question_video": [{"source": 1}],
       "question_audio": [{"source": 0, "interval": ["1:12", "1:28"], "reverse": true}],
       "answer_video": [{"source": 0, "interval": ["1:12", "1:28"]}],
       "answer_audio": [{"source": 0, "interval": ["1:12", "1:28"]}],
