@@ -16,7 +16,7 @@ class FFMpeg(ppq.backends.backend.Backend):
     """FFMPEG backend, implements interface from base-class"""
 
     def __init__(self, source_file: Path, has_video: bool, has_audio: bool,
-                 display_graph: bool = False, width: int = 1280, height: int = 720, **kwargs: Any) -> None:
+                 width: int, height: int, display_graph: bool = False, **kwargs: Any) -> None:
         super().__init__(has_video, has_audio, width, height)
         stream = ffmpeg.input(str(source_file), **kwargs)
         self.display_graph = display_graph
@@ -72,12 +72,13 @@ class FFMpeg(ppq.backends.backend.Backend):
         stream_v = stream_v.filter("pad", width=width, height=height, x="(ow-iw)/2", y="(oh-ih)/2", color="black")
         self.stream_v = stream_v.filter("setsar", sar="1/1")
 
-    def draw_text_in_box(self, video_text: str, length: int, box_height: int, move: bool, top: bool) -> None:
+    def draw_text_in_box(self, video_text: str, length: int, move: bool, top: bool) -> None:
         """Draws a semi-transparent box either at the top or bottom and writes text in it, optionally scrolling by"""
         if not self.has_video:
             return
         width = self.width
         height = self.height
+        box_height = self.get_box_height()
         y_location = 0 if top else height - box_height
 
         thickness = "fill" if self.version.startswith("N") else "max"  # Assume nightlies are new.
@@ -85,7 +86,7 @@ class FFMpeg(ppq.backends.backend.Backend):
                                          thickness=thickness)
         x_location_text = "{:d} * t / {:d}".format(width, length) if move else "{:d} - text_w / 2".format(width // 2)
         y_location_text = int(box_height * 1 / 4) if top else int(height - box_height * 3 / 4)
-        self.stream_v = stream_v.drawtext(text=video_text, fontcolor="white", fontsize=50,
+        self.stream_v = stream_v.drawtext(text=video_text, fontcolor="white", fontsize=self.get_font_size(),
                                           x=x_location_text, y=y_location_text)
 
     def draw_text(self, video_text: str, height_fraction: float) -> None:
@@ -96,7 +97,7 @@ class FFMpeg(ppq.backends.backend.Backend):
 
         x_location_text = "{:d} - text_w / 2".format(self.width // 2)
         y_location_text = self.height * height_fraction
-        self.stream_v = self.stream_v.drawtext(text=video_text, fontcolor="white", fontsize=50,
+        self.stream_v = self.stream_v.drawtext(text=video_text, fontcolor="white", fontsize=self.get_font_size(),
                                                x=x_location_text, y=y_location_text)
 
     def add_audio(self, other: 'FFMpeg') -> None:  # type: ignore
@@ -133,14 +134,14 @@ class FFMpeg(ppq.backends.backend.Backend):
         return file_name
 
     @classmethod
-    def create_empty_stream(cls, duration: int, width: int = 1280, height: int = 720) -> 'FFMpeg':
+    def create_empty_stream(cls, duration: int, width: int, height: int) -> 'FFMpeg':
         """Creates a video of a certain duration with a black still image"""
         still_image = pkg_resources.resource_filename("resources", "still_black.png")
         return cls.create_single_image_stream(Path(still_image), duration, width=width, height=height)
 
     @classmethod
     def create_single_image_stream(cls, input_image: Path, duration: int,
-                                   width: int = 1280, height: int = 720) -> 'FFMpeg':
+                                   width: int, height: int) -> 'FFMpeg':
         """Creates a video of a certain duration with a single still image"""
         stream = cls(input_image, has_video=True, has_audio=False, width=width, height=height,
                      t=duration, framerate=25, loop=1)

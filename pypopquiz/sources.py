@@ -10,7 +10,7 @@ import pypopquiz.io
 import pypopquiz.video
 
 
-def get_source(source_data: Dict[str, Any], output_dir: Path, input_dir: Path) -> None:
+def get_source(source_data: Dict[str, Any], output_dir: Path, input_dir: Path, width: int, height: int) -> None:
     """Retrieves a source and stores is in a local output directory, skips if already there"""
 
     if not output_dir.exists():
@@ -35,8 +35,10 @@ def get_source(source_data: Dict[str, Any], output_dir: Path, input_dir: Path) -
         input_file = input_dir / ppq.io.get_source_file_name(source_data)
         input_file.rename(output_dir / ppq.io.SOURCES_BASE_FOLDER)
     elif source_type == "text":
-        ppq.video.create_text_video(output_file, source_data["text"], source_data["duration"])
+        ppq.video.create_text_video(output_file, source_data["text"], source_data["duration"],
+                                    width=width, height=height)
     elif source_type == "image":
-        ppq.video.create_video_from_single_image(output_file, source_data["identifier"], source_data["duration"])
+        ppq.video.create_video_from_single_image(output_file, source_data["identifier"], source_data["duration"],
+                                                 width=width, height=height)
     else:
         raise KeyError("Unsupported source(s) '{:s}'".format(source_type))

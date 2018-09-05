@@ -14,11 +14,19 @@ import pypopquiz.io
 class Backend(abc.ABC):
     """Abstract class to specify the backend interface"""
 
-    def __init__(self, has_video: bool, has_audio: bool, width: int = 1280, height: int = 720) -> None:
+    def __init__(self, has_video: bool, has_audio: bool, width: int, height: int) -> None:
         self.has_video = has_video
         self.has_audio = has_audio
         self.width = width
         self.height = height
+
+    def get_font_size(self) -> int:
+        """Retrieves an appropriate font-size for this video"""
+        return self.height // 14
+
+    def get_box_height(self) -> int:
+        """Retrieves an appropriate box-height for this video"""
+        return self.height // 7
 
     @abc.abstractmethod
     def trim(self, start_s: int, end_s: int) -> None:
@@ -46,7 +54,7 @@ class Backend(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def draw_text_in_box(self, video_text: str, length: int, box_height: int, move: bool, top: bool) -> None:
+    def draw_text_in_box(self, video_text: str, length: int, move: bool, top: bool) -> None:
         """Draws a semi-transparent box either at the top or bottom and writes text in it, optionally scrolling by"""
         pass
 
@@ -64,13 +72,13 @@ class Backend(abc.ABC):
         pass
 
     @classmethod
-    def create_empty_stream(cls, duration: int, width: int = 1280, height: int = 720) -> 'Backend':
+    def create_empty_stream(cls, duration: int, width: int, height: int) -> 'Backend':
         """Creates a video of a certain duration with a black still image"""
         pass
 
     @classmethod
     def create_single_image_stream(cls, input_image: Path, duration: int,
-                                   width: int = 1280, height: int = 720) -> 'Backend':
+                                   width: int, height: int) -> 'Backend':
         """Creates a video of a certain duration with a single still image"""
         pass
 

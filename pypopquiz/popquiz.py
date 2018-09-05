@@ -16,10 +16,12 @@ def parse_arguments():
     parser.add_argument("-i", "--input_file", required=True, help="Input JSON file with popquiz info", type=Path)
     parser.add_argument("-o", "--output_dir", required=True, help="Output dir with popquiz data", type=Path)
     parser.add_argument("-b", "--backend", required=False, help="Backend selection", type=str, default='ffmpeg')
+    parser.add_argument("--width", required=False, help="Video width", type=int, default=1280)
+    parser.add_argument("--height", required=False, help="Video height", type=int, default=720)
     return vars(parser.parse_args())
 
 
-def popquiz(input_file: Path, output_dir: Path, backend: str) -> None:
+def popquiz(input_file: Path, output_dir: Path, backend: str, width: int, height: int) -> None:
     """The main routine, constructing the entire popquiz output"""
 
     input_data = ppq.io.read_input(input_file)
@@ -33,7 +35,7 @@ def popquiz(input_file: Path, output_dir: Path, backend: str) -> None:
 
     for question in input_data["questions"]:
         for source in question["sources"]:
-            ppq.sources.get_source(source, output_dir, input_file.parent)
+            ppq.sources.get_source(source, output_dir, input_file.parent, width=width, height=height)
 
     q_videos, a_videos = [], []
     for index, question in enumerate(input_data["questions"]):
@@ -46,10 +48,10 @@ def popquiz(input_file: Path, output_dir: Path, backend: str) -> None:
 
         ppq.io.log("Processing question {:d}: {:s}".format(question_id, str(answer_texts)))
         q_video = ppq.video.create_video("question", round_id, question, question_id, output_dir, answer_texts,
-                                         backend=backend, spacer_txt=spacer_txt,
+                                         width=width, height=height, backend=backend, spacer_txt=spacer_txt,
                                          use_cached_video_files=use_cached_video_files, is_example=is_example)
         a_video = ppq.video.create_video("answer", round_id, question, question_id, output_dir, answer_texts,
-                                         backend=backend, spacer_txt=spacer_txt,
+                                         width=width, height=height, backend=backend, spacer_txt=spacer_txt,
                                          use_cached_video_files=use_cached_video_files, is_example=is_example)
         q_videos.append(q_video)
         if is_example:
@@ -57,9 +59,9 @@ def popquiz(input_file: Path, output_dir: Path, backend: str) -> None:
         else:
             a_videos.append(a_video)
 
-    ppq.video.combine_videos(q_videos, "question", round_id, output_dir, backend=backend)
+    ppq.video.combine_videos(q_videos, "question", round_id, output_dir, backend=backend, width=width, height=height)
     if a_videos:
-        ppq.video.combine_videos(a_videos, "answer", round_id, output_dir, backend=backend)
+        ppq.video.combine_videos(a_videos, "answer", round_id, output_dir, backend=backend, width=width, height=height)
 
     ppq.sheets.create_sheets("question", input_data, output_dir)
     ppq.sheets.create_sheets("answer", input_data, output_dir)
