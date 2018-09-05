@@ -82,6 +82,7 @@ class Backend(abc.ABC):
         """Creates a video of a certain duration with a single still image"""
         pass
 
+    @abc.abstractmethod
     def add_spacer(self, text: str, duration_s: float) -> None:
         """Add a text spacer to the start of the video clip."""
         pass
@@ -90,6 +91,7 @@ class Backend(abc.ABC):
         """Add a silence of a certain duration the an audio clip."""
         pass
 
+    @abc.abstractmethod
     def reverse(self) -> None:
         """Reverses an entire audio or video clip."""
         pass

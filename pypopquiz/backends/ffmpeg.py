@@ -42,13 +42,17 @@ class FFMpeg(ppq.backends.backend.Backend):
             joined = ffmpeg.concat(stream_a[0].filter("afifo"), stream_a[1].filter("afifo"), v=0, a=1).node
             self.stream_a = joined[0]
 
-    def combine(self, other: 'FFMpeg') -> None:  # type: ignore
+    def combine(self, other: 'FFMpeg', other_first: bool = False) -> None:  # type: ignore
         """Combines this stream with another stream"""
+        first_stream = other if other_first else self
+        second_stream = self if other_first else other
         if self.has_video:
-            joined = ffmpeg.concat(self.stream_v.filter("fifo"), other.stream_v.filter("fifo"), v=1, a=0).node
+            joined = ffmpeg.concat(first_stream.stream_v.filter("fifo"),
+                                   second_stream.stream_v.filter("fifo"), v=1, a=0).node
             self.stream_v = joined[0]
         if self.has_audio:
-            joined = ffmpeg.concat(self.stream_a.filter("afifo"), other.stream_a.filter("afifo"), v=0, a=1).node
+            joined = ffmpeg.concat(first_stream.stream_a.filter("afifo"),
+                                   second_stream.stream_a.filter("afifo"), v=0, a=1).node
             self.stream_a = joined[0]
 
     def fade_in_and_out(self, duration_s: int, video_length_s: int) -> None:
@@ -105,6 +109,13 @@ class FFMpeg(ppq.backends.backend.Backend):
         assert self.has_video and other.has_audio
         self.stream_a = other.stream_a
         self.has_audio = True
+
+    def add_spacer(self, text: str, duration_s: float) -> None:
+        """Add a text spacer to the start of the video clip."""
+        assert self.has_video
+        spacer = self.create_empty_stream(int(duration_s), self.width, self.height)
+        spacer.draw_text_in_box(text, length=int(duration_s), move=True, top=False)
+        self.combine(spacer, other_first=True)
 
     def reverse(self) -> None:
         """Reverses an entire audio or video clip."""
