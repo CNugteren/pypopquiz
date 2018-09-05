@@ -31,7 +31,7 @@ def get_interval_length(interval: Tuple[int, int]) -> int:
 
 
 def filter_stream_video(stream: VideoBackend, kind: str, interval: Tuple[int, int], answer_texts: List[str],
-                        reverse: bool, box_height: int = 100, fade_amount_s: int = 3,
+                        reverse: bool, fade_amount_s: int = 3,
                         answer_label_events: Optional[List] = None) -> VideoBackend:
     """Adds ffmpeg filters to the stream, processing a single video stream"""
     if kind == "answer" and answer_label_events is not None:
@@ -48,7 +48,7 @@ def filter_stream_video(stream: VideoBackend, kind: str, interval: Tuple[int, in
     if kind == "answer":
         # (up to the) first two answers are joined together with " - " and shown at the top
         answer_text = " - ".join(answer_texts[:2])
-        stream.draw_text_in_box(answer_text, get_interval_length(interval), box_height, move=False, top=True)
+        stream.draw_text_in_box(answer_text, get_interval_length(interval), move=False, top=True)
         # Remainder is shown in the center of the video
         for text_id, answer_text in enumerate(answer_texts[2:]):
             stream.draw_text(answer_text, 0.5 - 0.1 * len(answer_texts[2:]) + 0.2 * text_id)
@@ -56,7 +56,7 @@ def filter_stream_video(stream: VideoBackend, kind: str, interval: Tuple[int, in
 
 
 def filter_stream_videos(stream: VideoBackend, kind: str, round_id: int, question_id: int,
-                         repetitions: int, total_duration: int, box_height: int = 100,
+                         repetitions: int, total_duration: int,
                          spacer_txt: str = "", is_example: bool = False) -> VideoBackend:
     """Adds ffmpeg filters to the stream, processing the combined video stream"""
     if is_example:
@@ -66,7 +66,7 @@ def filter_stream_videos(stream: VideoBackend, kind: str, round_id: int, questio
     if repetitions > 1:
         question_text += " ({:d}x)".format(repetitions)
 
-    stream.draw_text_in_box(question_text, total_duration, box_height, move=True, top=False)
+    stream.draw_text_in_box(question_text, total_duration, move=True, top=False)
     repeat_stream(stream, repetitions)
     if spacer_txt != "" and kind == "question":
         stream.add_spacer(spacer_txt, duration_s=2)

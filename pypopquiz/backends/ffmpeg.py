@@ -72,12 +72,13 @@ class FFMpeg(ppq.backends.backend.Backend):
         stream_v = stream_v.filter("pad", width=width, height=height, x="(ow-iw)/2", y="(oh-ih)/2", color="black")
         self.stream_v = stream_v.filter("setsar", sar="1/1")
 
-    def draw_text_in_box(self, video_text: str, length: int, box_height: int, move: bool, top: bool) -> None:
+    def draw_text_in_box(self, video_text: str, length: int, move: bool, top: bool) -> None:
         """Draws a semi-transparent box either at the top or bottom and writes text in it, optionally scrolling by"""
         if not self.has_video:
             return
         width = self.width
         height = self.height
+        box_height = self.get_box_height()
         y_location = 0 if top else height - box_height
 
         thickness = "fill" if self.version.startswith("N") else "max"  # Assume nightlies are new.
@@ -85,7 +86,7 @@ class FFMpeg(ppq.backends.backend.Backend):
                                          thickness=thickness)
         x_location_text = "{:d} * t / {:d}".format(width, length) if move else "{:d} - text_w / 2".format(width // 2)
         y_location_text = int(box_height * 1 / 4) if top else int(height - box_height * 3 / 4)
-        self.stream_v = stream_v.drawtext(text=video_text, fontcolor="white", fontsize=50,
+        self.stream_v = stream_v.drawtext(text=video_text, fontcolor="white", fontsize=self.get_font_size(),
                                           x=x_location_text, y=y_location_text)
 
     def draw_text(self, video_text: str, height_fraction: float) -> None:
@@ -96,7 +97,7 @@ class FFMpeg(ppq.backends.backend.Backend):
 
         x_location_text = "{:d} - text_w / 2".format(self.width // 2)
         y_location_text = self.height * height_fraction
-        self.stream_v = self.stream_v.drawtext(text=video_text, fontcolor="white", fontsize=50,
+        self.stream_v = self.stream_v.drawtext(text=video_text, fontcolor="white", fontsize=self.get_font_size(),
                                                x=x_location_text, y=y_location_text)
 
     def add_audio(self, other: 'FFMpeg') -> None:  # type: ignore

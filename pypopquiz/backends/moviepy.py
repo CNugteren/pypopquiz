@@ -127,11 +127,11 @@ class Moviepy(pypopquiz.backends.backend.Backend):
         assert self.has_video
         self.clip = self.clip.fx(vfx.resize, (self.width, self.height))  # TODO: padding with black
 
-    def draw_text_in_box(self, video_text: str, length: int, box_height: int, move: bool, top: bool) -> None:
+    def draw_text_in_box(self, video_text: str, length: int, move: bool, top: bool) -> None:
         """Draws a semi-transparent box either at the top or bottom and writes text in it, optionally scrolling by"""
         assert self.has_video
         self.clip = Moviepy.draw_text_in_box_on_video(
-            self.clip, video_text, length, self.width, self.height, box_height, move, top
+            self.clip, video_text, length, self.width, self.height, self.get_box_height(), move, top
         )
 
     @staticmethod
@@ -190,8 +190,8 @@ class Moviepy(pypopquiz.backends.backend.Backend):
         assert self.has_video
         duration_s = 0  # Don't care
         self.clip = Moviepy.draw_text_in_box_on_video(
-            self.clip, text, duration_s, self.width, self.height, box_height=100, move=False, top=False,
-            on_box=False, center=True, interval=interval, fontsize=50
+            self.clip, text, duration_s, self.width, self.height, box_height=self.get_box_height(),
+            move=False, top=False, on_box=False, center=True, interval=interval, fontsize=self.get_font_size()
         )
 
     def add_spacer(self, text: str, duration_s: float) -> None:
@@ -201,7 +201,8 @@ class Moviepy(pypopquiz.backends.backend.Backend):
         color = med.ColorClip(size=(self.width, self.height), color=(0, 0, 0), duration=duration_s)
         color = color.set_fps(30)  # pylint: disable=assignment-from-no-return
         spacer = Moviepy.draw_text_in_box_on_video(
-            color, text, duration_s, self.width, self.height, box_height=100, move=True, top=False, on_box=False
+            color, text, duration_s, self.width, self.height, box_height=self.get_box_height(),
+            move=True, top=False, on_box=False
         )
         self.clip = med.concatenate_videoclips([spacer, self.clip])
 

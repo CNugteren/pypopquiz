@@ -20,6 +20,14 @@ class Backend(abc.ABC):
         self.width = width
         self.height = height
 
+    def get_font_size(self) -> int:
+        """Retrieves an appropriate font-size for this video"""
+        return self.height // 14
+
+    def get_box_height(self) -> int:
+        """Retrieves an appropriate box-height for this video"""
+        return self.height // 7
+
     @abc.abstractmethod
     def trim(self, start_s: int, end_s: int) -> None:
         """Trims a stream to a given start and end time measured in seconds"""
@@ -46,7 +54,7 @@ class Backend(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def draw_text_in_box(self, video_text: str, length: int, box_height: int, move: bool, top: bool) -> None:
+    def draw_text_in_box(self, video_text: str, length: int, move: bool, top: bool) -> None:
         """Draws a semi-transparent box either at the top or bottom and writes text in it, optionally scrolling by"""
         pass
 
