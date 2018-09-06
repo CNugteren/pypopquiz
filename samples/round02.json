@@ -3,6 +3,7 @@
   "theme": "Mixed audio & video",
   "background_image": "background.png",
   "questioned": ["artist clip", "title clip", "artist song", "title song"],
+  "spacers": "... Get Ready ...",
   "first_question_is_example": true,
   "use_cached_video_files": false,
   "questions": [
