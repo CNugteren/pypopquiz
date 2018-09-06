@@ -100,15 +100,16 @@ class Moviepy(pypopquiz.backends.backend.Backend):
         else:
             self.clip = med.concatenate_audioclips([self.clip, self.clip])
 
-    def combine(self, other: 'Moviepy') -> None:  # type: ignore
+    def combine(self, other: 'Moviepy', other_first: bool = False) -> None:  # type: ignore
         """Combines this video stream with another stream"""
         self.reader_refs += other.reader_refs
+        clips = [other.clip, self.clip] if other_first else [self.clip, other.clip]
 
         if self.has_video and other.has_video:
-            self.clip = med.concatenate_videoclips([self.clip, other.clip])
+            self.clip = med.concatenate_videoclips(clips)
         else:
             assert self.has_video is False and other.has_video is False
-            self.clip = med.concatenate_audioclips([self.clip, other.clip])
+            self.clip = med.concatenate_audioclips(clips)
 
     def fade_in_and_out(self, duration_s: int, video_length_s: int) -> None:
         """Adds a fade-in and fade-out to/from black for the audio and video stream"""

@@ -120,7 +120,7 @@ class FFMpeg(ppq.backends.backend.Backend):
     def add_silence(self, duration_s: float) -> None:
         """Add a silence of a certain duration the an audio clip."""
         assert self.has_audio
-        no_audio = pkg_resources.resource_filename("resources", "no_audio.mp3")
+        no_audio = Path(pkg_resources.resource_filename("resources", "no_audio.mp3"))
         silence = FFMpeg(no_audio, has_video=False, has_audio=True, width=self.width, height=self.height,
                          t=duration_s)
         self.combine(silence, other_first=True)
