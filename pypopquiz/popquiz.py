@@ -35,7 +35,7 @@ def popquiz(input_file: Path, output_dir: Path, backend: str, width: int, height
 
     for question in input_data["questions"]:
         for source in question["sources"]:
-            ppq.sources.get_source(source, output_dir, input_file.parent, width=width, height=height)
+            ppq.sources.get_source(source, output_dir, input_file.parent, width=width, height=height, backend=backend)
 
     q_videos, a_videos = [], []
     for index, question in enumerate(input_data["questions"]):
