@@ -87,6 +87,7 @@ class Backend(abc.ABC):
         """Add a text spacer to the start of the video clip."""
         pass
 
+    @abc.abstractmethod
     def add_silence(self, duration_s: float) -> None:
         """Add a silence of a certain duration the an audio clip."""
         pass
