@@ -2,10 +2,10 @@
   "round": 7,
   "theme": "Beeps",
   "questioned": ["artist", "title"],
-  "use_cached_video_files": false,
   "spacers": "... Get Ready ...",
   "background_image": "background.png",
   "first_question_is_example": true,
+  "use_cached_video_files": false,
   "questions": [
     {
       "variables": {

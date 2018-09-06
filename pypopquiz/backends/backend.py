@@ -39,7 +39,7 @@ class Backend(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def combine(self, other: 'Backend') -> None:
+    def combine(self, other: 'Backend', other_first: bool) -> None:
         """Combines this stream with another stream"""
         pass
 
@@ -82,14 +82,17 @@ class Backend(abc.ABC):
         """Creates a video of a certain duration with a single still image"""
         pass
 
+    @abc.abstractmethod
     def add_spacer(self, text: str, duration_s: float) -> None:
         """Add a text spacer to the start of the video clip."""
         pass
 
+    @abc.abstractmethod
     def add_silence(self, duration_s: float) -> None:
         """Add a silence of a certain duration the an audio clip."""
         pass
 
+    @abc.abstractmethod
     def reverse(self) -> None:
         """Reverses an entire audio or video clip."""
         pass

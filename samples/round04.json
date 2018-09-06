@@ -2,6 +2,7 @@
   "round": 4,
   "theme": "Previous line",
   "questioned": ["artist", "title", "text"],
+  "spacers": "... Get Ready ...",
   "first_question_is_example": false,
   "use_cached_video_files": false,
   "questions": [
