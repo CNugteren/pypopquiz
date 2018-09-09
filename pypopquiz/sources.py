@@ -2,6 +2,7 @@
 
 from pathlib import Path
 from typing import Dict, Any
+import subprocess
 
 from pytube import YouTube
 
@@ -11,7 +12,7 @@ import pypopquiz.video
 
 
 def get_source(source_data: Dict[str, Any], output_dir: Path, input_dir: Path, width: int, height: int,
-               backend: str = 'ffmpeg') -> None:
+               backend: str = 'ffmpeg', downloader: str = 'pytube') -> None:
     """Retrieves a source and stores is in a local output directory, skips if already there"""
 
     if not output_dir.exists():
@@ -29,9 +30,17 @@ def get_source(source_data: Dict[str, Any], output_dir: Path, input_dir: Path, w
 
     if source_type == "youtube":
         ppq.io.log("Downloading video '{:s}' from Youtube...".format(source_url))
-        video = YouTube("https://www.youtube.com/watch?v={:s}".format(source_url))
-        video = video.streams.filter(subtype=source_data["format"]).first()
-        video.download(output_path=str(output_dir / ppq.io.SOURCES_BASE_FOLDER), filename=source_url)
+
+        if downloader == 'pytube':
+            video = YouTube("https://www.youtube.com/watch?v={:s}".format(source_url))
+            video = video.streams.filter(subtype=source_data["format"]).first()
+            video.download(output_path=str(output_dir / ppq.io.SOURCES_BASE_FOLDER), filename=source_url)
+        elif downloader == 'youtube-dl':
+            output_tpl = str(output_dir / ppq.io.SOURCES_BASE_FOLDER) + "/%(id)s.%(ext)s"
+            subprocess.run(['youtube-dl', "https://www.youtube.com/watch?v={:s}".format(source_url),
+                            "-f", "mp4", "-o", output_tpl])
+        else:
+            raise ValueError("Invalid downloader selected.")
     elif source_type == "local":
         input_file = input_dir / ppq.io.get_source_file_name(source_data)
         input_file.rename(output_dir / ppq.io.SOURCES_BASE_FOLDER)
