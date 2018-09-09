@@ -141,10 +141,40 @@ class Moviepy(pypopquiz.backends.backend.Backend):
             self.clip = self.clip.fx(afx.audio_fadein, duration_s).\
                 fx(afx.audio_fadeout, duration_s)
 
+    @staticmethod
+    def get_scaled_size(w_in: int, h_in: int, max_w_out: int, max_h_out: int) -> Tuple[int, int]:
+        """Return new dimensions using aspect-ratio preserving scaling to fit a certain bounding box."""
+        if w_in == max_w_out and h_in == max_h_out:
+            return w_in, h_in
+
+        target_w_factor = max_w_out / w_in
+        target_h_factor = max_h_out / h_in
+
+        scale_factor = min(target_w_factor, target_h_factor)
+        scale_w_to = int(w_in * scale_factor)
+        scale_h_to = int(h_in * scale_factor)
+
+        return scale_w_to, scale_h_to
+
     def scale_video(self) -> None:
         """Scales the video and pads if necessary to the requested dimensions"""
         assert self.has_video
-        self.clip = self.clip.fx(vfx.resize, (self.width, self.height))  # TODO: padding with black
+        video_w, video_h = self.clip.size
+
+        if video_w == self.width and video_h == self.height:
+            return
+
+        scale_w_to, scale_h_to = self.get_scaled_size(video_w, video_h, self.width, self.height)
+
+        # Scale clip
+        scaled_clip = self.clip.fx(vfx.resize, (scale_w_to, scale_h_to))  # TODO: padding with black
+        scaled_clip = scaled_clip.set_position(pos=((self.width - scale_w_to) // 2, (self.height - scale_h_to) // 2))
+
+        # Paste on black background
+        duration = self.clip.duration
+        clips = [self.create_color_clip((self.width, self.height), (0, 0, 0), duration), scaled_clip]
+        self.clip = med.CompositeVideoClip(clips)
+        self.clip.duration = duration
 
     def draw_text(self, video_text: str, height_fraction: float) -> None:
         """Draws text in the center of the video at a certain height fraction"""
