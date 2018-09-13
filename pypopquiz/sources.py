@@ -11,19 +11,19 @@ import pypopquiz.io
 import pypopquiz.video
 
 
-def to_youtube_url(video_identifier: str):
+def to_youtube_url(video_identifier: str) -> str:
     """"Convert video identifier to a youtube url."""
     return "https://www.youtube.com/watch?v={:s}".format(video_identifier)
 
 
-def download_with_pytube(sources_dir: Path, source_url: str, source_format: str):
+def download_with_pytube(sources_dir: Path, source_url: str, source_format: str) -> None:
     """Download video from youtube with pytube."""
     video = YouTube(to_youtube_url(source_url))
     video = video.streams.filter(subtype=source_format).first()
     video.download(output_path=str(sources_dir), filename=source_url)
 
 
-def download_with_youtube_dl(sources_dir: Path, source_url: str, source_format: str):
+def download_with_youtube_dl(sources_dir: Path, source_url: str, source_format: str) -> None:
     """Download video from youtube with youtube-dl."""
     output_tpl = str(sources_dir) + "/%(id)s.%(ext)s"
     dl_failed = False
