@@ -11,6 +11,7 @@ import moviepy.editor as med  # pylint: disable=no-name-in-module,import-error
 from moviepy.decorators import audio_video_fx  # pylint: disable=import-error,no-name-in-module
 from moviepy.editor import afx  # pylint: disable=import-error
 from moviepy.editor import vfx  # pylint: disable=import-error
+from moviepy.editor import transfx  # pylint: disable=import-error
 
 import pypopquiz as ppq
 import pypopquiz.backends.backend
@@ -128,16 +129,29 @@ class Moviepy(pypopquiz.backends.backend.Backend):
         else:
             self.clip = med.concatenate_audioclips([self.clip, self.clip])
 
-    def combine(self, other: 'Moviepy', other_first: bool = False) -> None:  # type: ignore
+    def combine(self, other: 'Moviepy', other_first: bool = False,
+                crossfade_duration: float = 0) -> None:  # type: ignore
         """Combines this video stream with another stream"""
         self.reader_refs += other.reader_refs
         clips = [other.clip, self.clip] if other_first else [self.clip, other.clip]
 
         if self.has_video and other.has_video:
-            self.clip = med.concatenate_videoclips(clips)
+            if crossfade_duration == 0:
+                self.clip = med.concatenate_videoclips(clips)
+            else:
+                # Have clips[1] start while clips[0] is not finished yet
+                fading_in = clips[1].set_start(clips[0].duration - crossfade_duration)
+                fading_in = fading_in.fx(transfx.crossfadein, crossfade_duration)
+                self.clip = med.CompositeVideoClip([clips[0], fading_in])
         else:
-            assert self.has_video is False and other.has_video is False
-            self.clip = med.concatenate_audioclips(clips)
+            if crossfade_duration == 0:
+                assert self.has_video is False and other.has_video is False
+                self.clip = med.concatenate_audioclips(clips)
+            else:
+                # Audio does not fade at the moment, but the effect feels reasonable,
+                # because fade_in_and_out is active everywhere.
+                fading_in = clips[1].set_start(clips[0].duration - crossfade_duration)
+                self.clip = med.CompositeAudioClip([clips[0], fading_in])
 
     def fade_in_and_out(self, duration_s: int, video_length_s: int) -> None:
         """Adds a fade-in and fade-out to/from black for the audio and video stream"""

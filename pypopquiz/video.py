@@ -154,17 +154,21 @@ def create_video(kind: str, round_id: int, question: Dict, question_id: int, out
     total_duration = 0
     for video_id, video_info in enumerate(question[kind+"_video"]):
         ppq.io.log("Processing video input {:d}/{:d}".format(video_id + 1, len(question[kind+"_video"])))
+
         interval = ppq.io.get_interval_in_s(video_info["interval"])
         total_duration += get_interval_length(interval)
         reverse = video_info.get("reverse", False)
         answer_label_events = video_info.get("answer_label_events", [])
+
         stream_video = backend_cls(video_files[video_id], has_video=True, has_audio=False, width=width, height=height)
-        stream_video = filter_stream_video(stream_video, kind, interval, answer_texts[video_id],
+        stream_video = filter_stream_video(stream_video, kind, interval, answer_texts[video_id % len(answer_texts)],
                                            reverse, answer_label_events=answer_label_events)
+
         if stream_videos is None:
             stream_videos = stream_video
         else:
-            stream_videos.combine(stream_video)
+            stream_videos.combine(stream_video, crossfade_duration=video_info.get("crossfade_duration", 0))
+
     ppq.io.log("Processing final video")
     assert stream_videos is not None
     stream_videos = filter_stream_videos(stream_videos, kind, round_id, question_id, repetitions,
@@ -174,15 +178,19 @@ def create_video(kind: str, round_id: int, question: Dict, question_id: int, out
     stream_audios = None
     for audio_id, audio_info in enumerate(question[kind+"_audio"]):
         ppq.io.log("Processing audio input {:d}/{:d}".format(audio_id + 1, len(question[kind+"_audio"])))
+
         interval = ppq.io.get_interval_in_s(audio_info["interval"])
         reverse = audio_info.get("reverse", False)
         beep_events = audio_info.get("beeps_events", [])
+
         stream_audio = backend_cls(audio_files[audio_id], has_video=False, has_audio=True, width=width, height=height)
         stream_audio = filter_stream_audio(stream_audio, interval, reverse, beep_events=beep_events)
+
         if stream_audios is None:
             stream_audios = stream_audio
         else:
-            stream_audios.combine(stream_audio)
+            stream_audios.combine(stream_audio, crossfade_duration=audio_info.get("crossfade_duration", 0))
+
     ppq.io.log("Processing final audio")
     assert stream_audios is not None
     stream_audio = filter_stream_audios(stream_audios, kind, repetitions, spacer_txt=spacer_txt)
