@@ -129,8 +129,8 @@ class Moviepy(pypopquiz.backends.backend.Backend):
         else:
             self.clip = med.concatenate_audioclips([self.clip, self.clip])
 
-    def combine(self, other: 'Moviepy', other_first: bool = False,
-                crossfade_duration: float = 0) -> None:  # type: ignore
+    def combine(self, other: 'Moviepy', other_first: bool = False,  # type: ignore
+                crossfade_duration: float = 0) -> None:
         """Combines this video stream with another stream"""
         self.reader_refs += other.reader_refs
         clips = [other.clip, self.clip] if other_first else [self.clip, other.clip]

@@ -39,7 +39,8 @@ class Backend(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def combine(self, other: 'Backend', other_first: bool) -> None:
+    def combine(self, other: 'Backend', other_first: bool,
+                crossfade_duration: float = 0) -> None:
         """Combines this stream with another stream"""
         pass
 

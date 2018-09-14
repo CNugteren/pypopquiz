@@ -42,7 +42,8 @@ class FFMpeg(ppq.backends.backend.Backend):
             joined = ffmpeg.concat(stream_a[0].filter("afifo"), stream_a[1].filter("afifo"), v=0, a=1).node
             self.stream_a = joined[0]
 
-    def combine(self, other: 'FFMpeg', other_first: bool = False) -> None:  # type: ignore
+    def combine(self, other: 'FFMpeg', other_first: bool = False,  # type: ignore
+                crossfade_duration: float = 0) -> None:
         """Combines this stream with another stream"""
         first_stream = other if other_first else self
         second_stream = self if other_first else other
