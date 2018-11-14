@@ -90,9 +90,9 @@ class FFMpeg(ppq.backends.backend.Backend):
         stream_v = self.stream_v.drawbox(x=0, y=y_location, width=width, height=box_height, color="gray@0.5",
                                          thickness=thickness)
         x_location_text = "{:d} * t / {:d}".format(width, length) if move else "{:d} - text_w / 2".format(width // 2)
-        y_location_text = int(box_height * 1 / 4) if top else int(height - box_height * 3 / 4)
+        y_location_text = str(int(box_height * 1 / 4)) if top else str(int(height - box_height * 3 / 4))
         if delay_in_sec is not None:
-            y_location_text = "{:d} - lt(t, {:d}) * 1000".format(y_location_text, delay_in_sec)
+            y_location_text = "{:s} - lt(t, {:d}) * 1000".format(y_location_text, delay_in_sec)
         self.stream_v = stream_v.drawtext(text=video_text, fontcolor="white", fontsize=self.get_font_size(),
                                           x=x_location_text, y=y_location_text)
 

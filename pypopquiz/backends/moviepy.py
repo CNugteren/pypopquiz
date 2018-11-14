@@ -187,7 +187,8 @@ class Moviepy(pypopquiz.backends.backend.Backend):
             interval=interval, fontsize=self.get_font_size()
         )
 
-    def draw_text_in_box(self, video_text: str, length: int, move: bool, top: bool) -> None:
+    def draw_text_in_box(self, video_text: str, length: int, move: bool, top: bool,
+                         delay_in_sec: Optional[int] = None) -> None:
         """Draws a semi-transparent box either at the top or bottom and writes text in it, optionally scrolling by"""
         assert self.has_video
         self.clip = Moviepy.draw_text_in_box_on_video(
