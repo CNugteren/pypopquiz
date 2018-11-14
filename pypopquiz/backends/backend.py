@@ -5,7 +5,7 @@ import contextlib
 from pathlib import Path
 import shutil
 import tempfile
-from typing import Generator, Tuple
+from typing import Generator, Tuple, Optional
 
 import pypopquiz as ppq
 import pypopquiz.io
@@ -54,7 +54,8 @@ class Backend(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def draw_text_in_box(self, video_text: str, length: int, move: bool, top: bool) -> None:
+    def draw_text_in_box(self, video_text: str, length: int, move: bool, top: bool,
+                         delay_in_sec: Optional[int] = None) -> None:
         """Draws a semi-transparent box either at the top or bottom and writes text in it, optionally scrolling by"""
         pass
 
