@@ -2,7 +2,7 @@
 
 import subprocess
 from pathlib import Path
-from typing import Any
+from typing import Any, Optional
 
 import pkg_resources
 import ffmpeg
@@ -76,7 +76,8 @@ class FFMpeg(ppq.backends.backend.Backend):
         stream_v = stream_v.filter("pad", width=width, height=height, x="(ow-iw)/2", y="(oh-ih)/2", color="black")
         self.stream_v = stream_v.filter("setsar", sar="1/1")
 
-    def draw_text_in_box(self, video_text: str, length: int, move: bool, top: bool) -> None:
+    def draw_text_in_box(self, video_text: str, length: int, move: bool, top: bool,
+                         delay_in_sec: Optional[int] = None) -> None:
         """Draws a semi-transparent box either at the top or bottom and writes text in it, optionally scrolling by"""
         if not self.has_video:
             return
@@ -89,7 +90,9 @@ class FFMpeg(ppq.backends.backend.Backend):
         stream_v = self.stream_v.drawbox(x=0, y=y_location, width=width, height=box_height, color="gray@0.5",
                                          thickness=thickness)
         x_location_text = "{:d} * t / {:d}".format(width, length) if move else "{:d} - text_w / 2".format(width // 2)
-        y_location_text = int(box_height * 1 / 4) if top else int(height - box_height * 3 / 4)
+        y_location_text = str(int(box_height * 1 / 4)) if top else str(int(height - box_height * 3 / 4))
+        if delay_in_sec is not None:
+            y_location_text = "{:s} - lt(t, {:d}) * 1000".format(y_location_text, delay_in_sec)
         self.stream_v = stream_v.drawtext(text=video_text, fontcolor="white", fontsize=self.get_font_size(),
                                           x=x_location_text, y=y_location_text)
 

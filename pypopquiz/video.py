@@ -31,7 +31,7 @@ def get_interval_length(interval: Tuple[int, int]) -> int:
 
 
 def filter_stream_video(stream: VideoBackend, kind: str, interval: Tuple[int, int], answer_texts: List[str],
-                        reverse: bool, fade_amount_s: int = 3,
+                        reverse: bool, fade_amount_s: int = 3, delay_answer_text_s: int = 3,
                         answer_label_events: Optional[List] = None) -> VideoBackend:
     """Adds ffmpeg filters to the stream, processing a single video stream"""
     if kind == "answer" and answer_label_events is not None:
@@ -48,7 +48,8 @@ def filter_stream_video(stream: VideoBackend, kind: str, interval: Tuple[int, in
     if kind == "answer":
         # (up to the) first two answers are joined together with " - " and shown at the top
         answer_text = " - ".join(answer_texts[:2])
-        stream.draw_text_in_box(answer_text, get_interval_length(interval), move=False, top=True)
+        stream.draw_text_in_box(answer_text, get_interval_length(interval), move=False, top=True,
+                                delay_in_sec=delay_answer_text_s)
         # Remainder is shown in the center of the video
         for text_id, answer_text in enumerate(answer_texts[2:]):
             stream.draw_text(answer_text, 0.5 - 0.1 * len(answer_texts[2:]) + 0.2 * text_id)
