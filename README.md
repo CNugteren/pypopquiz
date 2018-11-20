@@ -39,9 +39,9 @@ Feature list / roadmap
 | Types of rounds                | Status      |
 |--------------------------------|-------------|
 | Audio & video                  | ✔           |
-| Audio only                     |             |
+| Audio only                     | ✔           |
 | Text only round                |             |
-| Beeps/gaps/missing-word round  |             |
+| Beeps/gaps/missing-word round  | ✔           |
 
 | Special features               | Status      |
 |--------------------------------|-------------|
