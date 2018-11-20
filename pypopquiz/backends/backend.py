@@ -78,6 +78,11 @@ class Backend(abc.ABC):
         pass
 
     @classmethod
+    def create_silent_stream(cls, duration: float, width: int, height: int) -> 'Backend':
+        """Creates audio of a certain duration with no sound"""
+        pass
+
+    @classmethod
     def create_single_image_stream(cls, input_image: Path, duration: int,
                                    width: int, height: int) -> 'Backend':
         """Creates a video of a certain duration with a single still image"""

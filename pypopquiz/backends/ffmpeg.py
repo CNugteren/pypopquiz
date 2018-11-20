@@ -123,9 +123,7 @@ class FFMpeg(ppq.backends.backend.Backend):
     def add_silence(self, duration_s: float) -> None:
         """Add a silence of a certain duration the an audio clip."""
         assert self.has_audio
-        no_audio = Path(pkg_resources.resource_filename("resources", "no_audio.mp3"))
-        silence = FFMpeg(no_audio, has_video=False, has_audio=True, width=self.width, height=self.height,
-                         t=duration_s)
+        silence = self.create_silent_stream(duration=duration_s, width=self.width, height=self.height)
         self.combine(silence, other_first=True)
 
     def reverse(self) -> None:
@@ -160,6 +158,12 @@ class FFMpeg(ppq.backends.backend.Backend):
         """Creates a video of a certain duration with a black still image"""
         still_image = pkg_resources.resource_filename("resources", "still_black.png")
         return cls.create_single_image_stream(Path(still_image), duration, width=width, height=height)
+
+    @classmethod
+    def create_silent_stream(cls, duration: float, width: int, height: int) -> 'FFMpeg':
+        """Creates audio of a certain duration with no sound"""
+        no_audio = Path(pkg_resources.resource_filename("resources", "no_audio.mp3"))
+        return cls(no_audio, has_video=False, has_audio=True, width=width, height=height, t=duration)
 
     @classmethod
     def create_single_image_stream(cls, input_image: Path, duration: int,
