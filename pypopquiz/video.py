@@ -118,7 +118,7 @@ def get_sources(question: Dict, media: str, kind: str) -> List[Dict]:
     return [sources[source_index] for source_index in source_indices]
 
 
-def create_video(kind: str, round_id: int, question: Dict, question_id: int, output_dir: Path,
+def create_video(kind: str, round_id: int, question: Dict, question_id: int, output_dir: Path, round_dir: Path,
                  answer_texts: List[List[str]], width: int, height: int,
                  backend: str = 'ffmpeg', spacer_txt: str = "",
                  use_cached_video_files: bool = False, is_example: bool = False) -> Path:
@@ -138,9 +138,6 @@ def create_video(kind: str, round_id: int, question: Dict, question_id: int, out
 
     # Force output file to be a video
     target_format = 'mp4'
-    round_dir = output_dir / ("{:02d}".format(round_id))
-    if not round_dir.exists():
-        round_dir.mkdir()
     file_name = round_dir / ("{:02d}_{:02d}_{:s}.{:s}".format(round_id, question_id, kind, target_format))
 
     generate_video = True

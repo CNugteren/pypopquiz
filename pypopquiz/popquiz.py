@@ -32,6 +32,10 @@ def popquiz(input_file: Path, output_dir: Path, backend: str, downloader: str, w
     questioned = input_data["questioned"]
     ppq.io.log("Processing popquiz round {:d}".format(round_id))
 
+    round_dir = output_dir / ("{:02d}".format(round_id))
+    if not round_dir.exists():
+        round_dir.mkdir()
+
     spacer_txt = input_data.get('spacers', '')
     use_cached_video_files = input_data.get('use_cached_video_files', False)
     first_question_is_example = input_data.get('first_question_is_example', False)
@@ -51,12 +55,14 @@ def popquiz(input_file: Path, output_dir: Path, backend: str, downloader: str, w
             answer_texts.append([answers[question_text] for question_text in questioned if question_text in answers])
 
         ppq.io.log("Processing question {:d}: {:s}".format(question_id, str(answer_texts)))
-        q_video = ppq.video.create_video("question", round_id, question, question_id, output_dir, answer_texts,
-                                         width=width, height=height, backend=backend, spacer_txt=spacer_txt,
-                                         use_cached_video_files=use_cached_video_files, is_example=is_example)
-        a_video = ppq.video.create_video("answer", round_id, question, question_id, output_dir, answer_texts,
-                                         width=width, height=height, backend=backend, spacer_txt=spacer_txt,
-                                         use_cached_video_files=use_cached_video_files, is_example=is_example)
+        q_video = ppq.video.create_video("question", round_id, question, question_id, output_dir, round_dir,
+                                         answer_texts, width=width, height=height, backend=backend,
+                                         spacer_txt=spacer_txt, use_cached_video_files=use_cached_video_files,
+                                         is_example=is_example)
+        a_video = ppq.video.create_video("answer", round_id, question, question_id, output_dir, round_dir,
+                                         answer_texts, width=width, height=height, backend=backend,
+                                         spacer_txt=spacer_txt, use_cached_video_files=use_cached_video_files,
+                                         is_example=is_example)
         q_videos.append(q_video)
         if is_example:
             q_videos.append(a_video)  # show the answer of the example directly after the example question
