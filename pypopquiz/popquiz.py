@@ -24,7 +24,8 @@ def parse_arguments():
     return vars(parser.parse_args())
 
 
-def popquiz(input_file: Path, output_dir: Path, backend: str, downloader: str, width: int, height: int) -> None:
+def popquiz(input_file: Path, output_dir: Path, backend: str, downloader: str, width: int, height: int,
+            title_text_duration_s: int = 10) -> None:
     """The main routine, constructing the entire popquiz output"""
 
     input_data = ppq.io.read_input(input_file)
@@ -45,7 +46,15 @@ def popquiz(input_file: Path, output_dir: Path, backend: str, downloader: str, w
             ppq.sources.get_source(source, output_dir, input_file.parent, width=width, height=height,
                                    backend=backend, downloader=downloader)
 
-    q_videos, a_videos = [], []
+    theme = '"{:s}"'.format(input_data["theme"])
+    q_title = ppq.video.create_text_video(round_dir / ("{:02d}_questions_title.mp4".format(round_id)),
+                                          ["Round {:02d}".format(round_id), theme],
+                                          title_text_duration_s, width=width, height=height, backend=backend)
+    a_title = ppq.video.create_text_video(round_dir / ("{:02d}_answers_title.mp4".format(round_id)),
+                                          ["Answers for round {:02d}".format(round_id), theme],
+                                          title_text_duration_s, width=width, height=height, backend=backend)
+
+    q_videos, a_videos = [q_title], [a_title]
     for index, question in enumerate(input_data["questions"]):
         question_id = index + int(not first_question_is_example)  # start with 0 when having an example
         is_example = first_question_is_example and index == 0
