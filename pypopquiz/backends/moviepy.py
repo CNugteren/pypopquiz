@@ -68,8 +68,8 @@ class Moviepy(pypopquiz.backends.backend.Backend):
         # and hence we need to close them explicitly at the end of the run() method.
         self.reader_refs = []  # type: List[moviepy.clip.Clip]
 
+        audio_input_file = source_file.suffix in ('.mp3', '.wav',)
         if has_video:
-            audio_input_file = source_file.suffix in ('.mp3', '.wav', )
             if audio_input_file:
                 # Create a black clip with the audio file pasted on top
                 audio = med.AudioFileClip(str(source_file))
@@ -84,8 +84,12 @@ class Moviepy(pypopquiz.backends.backend.Backend):
 
         elif has_audio:
             # Work only on audio from here on out
-            self.clip = med.AudioFileClip(str(source_file))
-            self.reader_refs.append(self.clip)
+            if audio_input_file:
+                self.clip = med.AudioFileClip(str(source_file))
+                self.reader_refs.append(self.clip)
+            else:
+                self.clip = med.AudioClip(silence, duration=duration)
+                self.reader_refs.append(self.clip)
         else:
             # Blank video
             assert duration is not None
@@ -97,6 +101,12 @@ class Moviepy(pypopquiz.backends.backend.Backend):
     def create_empty_stream(cls, duration: int, width: int, height: int) -> 'Moviepy':
         """Creates a video of a certain duration with a black still image"""
         return cls(source_file=Path(''), has_video=False, has_audio=False, width=width, height=height,
+                   duration=duration)
+
+    @classmethod
+    def create_silent_stream(cls, duration: float, width: int, height: int) -> 'Moviepy':
+        """Creates audio of a certain duration with no sound"""
+        return cls(source_file=Path(''), has_video=False, has_audio=True, width=width, height=height,
                    duration=duration)
 
     @staticmethod
