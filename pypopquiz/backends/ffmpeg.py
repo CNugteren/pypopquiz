@@ -126,6 +126,11 @@ class FFMpeg(ppq.backends.backend.Backend):
         silence = self.create_silent_stream(duration=duration_s, width=self.width, height=self.height)
         self.combine(silence, other_first=True)
 
+    def normalize_audio(self) -> None:
+        """Normalizes audio volume"""
+        assert self.has_audio
+        self.stream_a = self.stream_a.filter("loudnorm")
+
     def reverse(self) -> None:
         """Reverses an entire audio or video clip."""
         if self.has_video:

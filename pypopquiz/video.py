@@ -94,6 +94,7 @@ def filter_stream_audios(stream: VideoBackend, kind: str, repetitions: int, spac
     repeat_stream(stream, repetitions)
     if spacer_txt != "" and kind == "question":
         stream.add_silence(duration_s=2)  # for the spacer
+    stream.normalize_audio()
     return stream
 
 
