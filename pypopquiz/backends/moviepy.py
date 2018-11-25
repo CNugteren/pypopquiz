@@ -85,12 +85,14 @@ class Moviepy(pypopquiz.backends.backend.Backend):
 
         elif has_audio:
             # Work only on audio from here on out
-            if audio_input_file:
+            if source_file.is_file():
+                # Extract audio stream from file (even if it is a video file)
                 self.clip = med.AudioFileClip(str(source_file))
                 self.reader_refs.append(self.clip)
             else:
-                self.clip = med.AudioClip(silence, duration=duration)
-                self.reader_refs.append(self.clip)
+                # A black clip w/o audio
+                duration = typing.cast(float, duration)
+                self.clip = self.create_color_clip((width, height), (0, 0, 0), duration)
         else:
             # Blank video
             assert duration is not None
