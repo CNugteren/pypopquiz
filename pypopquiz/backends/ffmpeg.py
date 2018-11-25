@@ -56,16 +56,21 @@ class FFMpeg(ppq.backends.backend.Backend):
                                    second_stream.stream_a.filter("afifo"), v=0, a=1).node
             self.stream_a = joined[0]
 
-    def fade_in_and_out(self, duration_s: int, video_length_s: int) -> None:
+    def fade_in_and_out(self, duration_s: int, video_length_s: int, fade_in: bool = True,
+                        fade_out: bool = True) -> None:
         """Adds a fade-in and fade-out to/from black for the audio and video stream"""
         if self.has_video:
-            stream_v = self.stream_v.filter("fade", type="in", start_time=0, duration=duration_s)
-            self.stream_v = stream_v.filter("fade", type="out", start_time=video_length_s - duration_s,
-                                            duration=duration_s)
+            if fade_in:
+                self.stream_v = self.stream_v.filter("fade", type="in", start_time=0, duration=duration_s)
+            if fade_out:
+                self.stream_v = self.stream_v.filter("fade", type="out", start_time=video_length_s - duration_s,
+                                                     duration=duration_s)
         if self.has_audio:
-            stream_a = self.stream_a.filter("afade", type="in", start_time=0, duration=duration_s)
-            self.stream_a = stream_a.filter("afade", type="out", start_time=video_length_s - duration_s,
-                                            duration=duration_s)
+            if fade_in:
+                self.stream_a = self.stream_a.filter("afade", type="in", start_time=0, duration=duration_s)
+            if fade_out:
+                self.stream_a = self.stream_a.filter("afade", type="out", start_time=video_length_s - duration_s,
+                                                     duration=duration_s)
 
     def scale_video(self) -> None:
         """Scales the video and pads if necessary to the requested dimensions"""

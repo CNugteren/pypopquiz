@@ -45,7 +45,8 @@ class Backend(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def fade_in_and_out(self, duration_s: int, video_length_s: int) -> None:
+    def fade_in_and_out(self, duration_s: int, video_length_s: int, fade_in: bool = True,
+                        fade_out: bool = True) -> None:
         """Adds a fade-in and fade-out to/from black for the audio and video stream"""
         pass
 

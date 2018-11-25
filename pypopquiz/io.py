@@ -138,7 +138,7 @@ def verify_schema(input_data: Dict) -> None:
                                     "source": {"type": "number"},
                                     "interval": {"type": "array"},
                                     "reverse": {"type": "boolean"},
-                                    "answer_label_events": {"type": "string"}
+                                    "answer_label_events": {"type": ["string", "array"]}
                                 }
                             }
                         },
@@ -236,9 +236,9 @@ def verify_json_input(input_data: Dict) -> None:
                 if source_keys != {"duration"}:
                     raise ValueError("Missing source keys from image source {:s}".format(str(source)))
                 source["format"] = "mp4"  # default format
-        if len(question["answers"]) != len(question["answer_video"]):
-            raise ValueError("Expected {:d} answers, got {:d}".
-                             format(len(question["answer_video"]), len(question["answers"])))
+        # if len(question["answers"]) != len(question["answer_video"]):
+        #     raise ValueError("Expected {:d} answers, got {:d}".
+        #                      format(len(question["answer_video"]), len(question["answers"])))
         question_video_time = total_duration(question["question_video"])
         question_audio_time = total_duration(question["question_audio"])
         if question_video_time != question_audio_time:

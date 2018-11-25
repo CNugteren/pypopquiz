@@ -140,30 +140,39 @@ class Moviepy(pypopquiz.backends.backend.Backend):
                 self.clip = med.concatenate_videoclips(clips)
             else:
                 # Have clips[1] start while clips[0] is not finished yet
-                fading_in = clips[1].set_start(clips[0].duration - crossfade_duration)
-                fading_in = fading_in.fx(transfx.crossfadein, crossfade_duration)
-                self.clip = med.CompositeVideoClip([clips[0], fading_in])
+                clips[1] = clips[1].set_start(max(0, clips[0].duration - crossfade_duration))
+                clips[1] = clips[1].fx(transfx.crossfadein, crossfade_duration)
+                self.clip = med.CompositeVideoClip([clips[0], clips[1]])
+                self.clip.duration = clips[0].duration + clips[1].duration - crossfade_duration
         else:
             if crossfade_duration == 0:
                 assert self.has_video is False and other.has_video is False
                 self.clip = med.concatenate_audioclips(clips)
             else:
-                # Audio does not fade at the moment, but the effect feels reasonable,
-                # because fade_in_and_out is active everywhere.
-                fading_in = clips[1].set_start(clips[0].duration - crossfade_duration)
-                self.clip = med.CompositeAudioClip([clips[0], fading_in])
+                # Audio crossfade in: start earlier, fade in with normal audio_fadein effect.
+                clips[1] = clips[1].set_start(max(0, clips[0].duration - crossfade_duration))
+                clips[1] = clips[1].fx(afx.audio_fadein, crossfade_duration)
+                self.clip = med.CompositeAudioClip([clips[0], clips[1]])
+                self.clip.duration = clips[0].duration + clips[1].duration - crossfade_duration
 
-    def fade_in_and_out(self, duration_s: int, video_length_s: int) -> None:
+    def fade_in_and_out(self, duration_s: int, video_length_s: int, fade_in: bool = True,
+                        fade_out: bool = True) -> None:
         """Adds a fade-in and fade-out to/from black for the audio and video stream"""
         if self.has_video:
 
-            self.clip = self.clip.fx(vfx.fadein, duration_s).\
-                fx(vfx.fadeout, duration_s).\
-                fx(afx.audio_fadein, duration_s).\
-                fx(afx.audio_fadeout, duration_s)
+            if fade_in:
+                self.clip = self.clip.fx(vfx.fadein, duration_s).\
+                    fx(afx.audio_fadein, duration_s)
+
+            if fade_out:
+                self.clip = self.clip.fx(vfx.fadeout, duration_s).\
+                    fx(afx.audio_fadeout, duration_s)
         else:
-            self.clip = self.clip.fx(afx.audio_fadein, duration_s).\
-                fx(afx.audio_fadeout, duration_s)
+            if fade_in:
+                self.clip = self.clip.fx(afx.audio_fadein, duration_s)
+
+            if fade_out:
+                self.clip = self.clip.fx(afx.audio_fadeout, duration_s)
 
     @staticmethod
     def get_scaled_size(w_in: int, h_in: int, max_w_out: int, max_h_out: int) -> Tuple[int, int]:

@@ -32,7 +32,9 @@ def get_interval_length(interval: Tuple[int, int]) -> int:
 
 def filter_stream_video(stream: VideoBackend, kind: str, interval: Tuple[int, int], answer_texts: List[str],
                         reverse: bool, fade_amount_s: int = 3, delay_answer_text_s: int = 3,
-                        answer_label_events: Optional[List] = None) -> VideoBackend:
+                        answer_label_events: Optional[List] = None,
+                        crossfade_duration: float = 0) -> VideoBackend:
+
     """Adds ffmpeg filters to the stream, processing a single video stream"""
     if kind == "answer" and answer_label_events is not None:
         for event in answer_label_events:
@@ -43,7 +45,7 @@ def filter_stream_video(stream: VideoBackend, kind: str, interval: Tuple[int, in
     stream.trim(start_s=interval[0], end_s=interval[1])
     if reverse:
         stream.reverse()
-    stream.fade_in_and_out(fade_amount_s, get_interval_length(interval))
+    stream.fade_in_and_out(fade_amount_s, get_interval_length(interval))  # , fade_in=crossfade_duration == 0)
     stream.scale_video()
     if kind == "answer":
         # (up to the) first two answers are joined together with " - " and shown at the top
@@ -75,7 +77,8 @@ def filter_stream_videos(stream: VideoBackend, kind: str, round_id: int, questio
 
 
 def filter_stream_audio(stream: VideoBackend, interval: Tuple[int, int], reverse: bool,
-                        fade_amount_s: int = 3, beep_events: Optional[List] = None) -> VideoBackend:
+                        fade_amount_s: int = 3, beep_events: Optional[List] = None,
+                        crossfade_duration: float = 0) -> VideoBackend:
     """Adds ffmpeg filters to the stream, producing a single audio stream"""
     if beep_events is not None:
         for event in beep_events:
@@ -85,7 +88,7 @@ def filter_stream_audio(stream: VideoBackend, interval: Tuple[int, int], reverse
     stream.trim(start_s=interval[0], end_s=interval[1])
     if reverse:
         stream.reverse()
-    stream.fade_in_and_out(fade_amount_s, get_interval_length(interval))
+    stream.fade_in_and_out(fade_amount_s, get_interval_length(interval))  # , fade_in=crossfade_duration == 0)
     return stream
 
 
@@ -159,15 +162,17 @@ def create_video(kind: str, round_id: int, question: Dict, question_id: int, out
         total_duration += get_interval_length(interval)
         reverse = video_info.get("reverse", False)
         answer_label_events = video_info.get("answer_label_events", [])
+        crossfade_duration = video_info.get("crossfade_duration", 0)
 
         stream_video = backend_cls(video_files[video_id], has_video=True, has_audio=False, width=width, height=height)
         stream_video = filter_stream_video(stream_video, kind, interval, answer_texts[video_id % len(answer_texts)],
-                                           reverse, answer_label_events=answer_label_events)
+                                           reverse, answer_label_events=answer_label_events,
+                                           crossfade_duration=crossfade_duration)
 
         if stream_videos is None:
             stream_videos = stream_video
         else:
-            stream_videos.combine(stream_video, crossfade_duration=video_info.get("crossfade_duration", 0))
+            stream_videos.combine(stream_video, crossfade_duration=crossfade_duration)
 
     ppq.io.log("Processing final video")
     assert stream_videos is not None
@@ -182,14 +187,16 @@ def create_video(kind: str, round_id: int, question: Dict, question_id: int, out
         interval = ppq.io.get_interval_in_s(audio_info["interval"])
         reverse = audio_info.get("reverse", False)
         beep_events = audio_info.get("beeps_events", [])
+        crossfade_duration = audio_info.get("crossfade_duration", 0)
 
         stream_audio = backend_cls(audio_files[audio_id], has_video=False, has_audio=True, width=width, height=height)
-        stream_audio = filter_stream_audio(stream_audio, interval, reverse, beep_events=beep_events)
+        stream_audio = filter_stream_audio(stream_audio, interval, reverse, beep_events=beep_events,
+                                           crossfade_duration=crossfade_duration)
 
         if stream_audios is None:
             stream_audios = stream_audio
         else:
-            stream_audios.combine(stream_audio, crossfade_duration=audio_info.get("crossfade_duration", 0))
+            stream_audios.combine(stream_audio, crossfade_duration=crossfade_duration)
 
     ppq.io.log("Processing final audio")
     assert stream_audios is not None
