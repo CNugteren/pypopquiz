@@ -70,6 +70,7 @@ class Moviepy(pypopquiz.backends.backend.Backend):
         self.reader_refs = []  # type: List[moviepy.clip.Clip]
 
         audio_input_file = source_file.suffix in ('.mp3', '.wav',)
+        image_input_file = source_file.suffix in ('.png', '.jpg')
         if has_video:
             if audio_input_file:
                 # Create a black clip with the audio file pasted on top
@@ -78,6 +79,9 @@ class Moviepy(pypopquiz.backends.backend.Backend):
 
                 self.clip = self.create_color_clip((width, height), (0, 0, 0), audio.duration)
                 self.clip = self.clip.set_audio(audio)
+            elif image_input_file:
+                duration = typing.cast(float, duration)
+                self.clip = med.ImageClip(str(source_file), duration=duration)
             else:
                 # Assume video otherwise
                 self.clip = med.VideoFileClip(str(source_file), audio=has_audio)
@@ -111,6 +115,15 @@ class Moviepy(pypopquiz.backends.backend.Backend):
         """Creates audio of a certain duration with no sound"""
         return cls(source_file=Path(''), has_video=False, has_audio=True, width=width, height=height,
                    duration=duration)
+
+    @classmethod
+    def create_single_image_stream(cls, input_image: Path, duration: int,
+                                   width: int, height: int) -> 'Moviepy':
+        """Creates a video of a certain duration with a single still image"""
+        stream = cls(Path(input_image), has_video=True, has_audio=False, width=width, height=height,
+                     duration=duration)
+        stream.scale_video()
+        return stream
 
     @staticmethod
     def create_color_clip(size: Tuple[int, int], color: Tuple[int, int, int], duration: float) -> med.ColorClip:
@@ -227,7 +240,8 @@ class Moviepy(pypopquiz.backends.backend.Backend):
         """Draws a semi-transparent box either at the top or bottom and writes text in it, optionally scrolling by"""
         assert self.has_video
         self.clip = Moviepy.draw_text_in_box_on_video(
-            self.clip, video_text, length, self.width, self.height, self.get_box_height(), move, top, fontsize=self.get_font_size()
+            self.clip, video_text, length, self.width, self.height, self.get_box_height(),
+            move, top, fontsize=self.get_font_size()
         )
 
     @staticmethod
