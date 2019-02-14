@@ -258,7 +258,9 @@ def verify_json_input(input_data: Dict) -> None:
 def read_input(file_name: Path) -> Dict:
     """Reads and validates a popquiz input JSON file"""
     with file_name.open() as json_data:
-        input_data = json.load(json_data)
+        lines = json_data.read().splitlines()
+        lines = '\n'.join([line for line in lines if not line.strip().startswith('//')])
+        input_data = json.loads(lines)
         verify_schema(input_data)
         ppq.iovarsubs.substitute_variables(input_data)
         set_missing_intervals(input_data)
