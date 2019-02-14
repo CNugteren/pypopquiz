@@ -227,7 +227,7 @@ class Moviepy(pypopquiz.backends.backend.Backend):
         """Draws a semi-transparent box either at the top or bottom and writes text in it, optionally scrolling by"""
         assert self.has_video
         self.clip = Moviepy.draw_text_in_box_on_video(
-            self.clip, video_text, length, self.width, self.height, self.get_box_height(), move, top
+            self.clip, video_text, length, self.width, self.height, self.get_box_height(), move, top, fontsize=self.get_font_size()
         )
 
     @staticmethod
@@ -238,7 +238,7 @@ class Moviepy(pypopquiz.backends.backend.Backend):
                                   interval: Optional[Tuple[float, float]] = None,
                                   fontsize=30) -> med.CompositeVideoClip:
         """Draws a semi-transparent box either at the top or bottom and writes text in it, optionally scrolling by"""
-        clips = [video]
+        clips = []
 
         y_location = 0 if top else height - box_height
         y_location = height // 2 if center else y_location
@@ -250,17 +250,20 @@ class Moviepy(pypopquiz.backends.backend.Backend):
 
         if on_box:
             color_clip = med.ColorClip(size=(video_w, box_height), color=(0, 0, 0))
+            color_clip = color_clip.set_fps(Moviepy.DEFAULT_FPS)  # pylint: disable=assignment-from-no-return
+
             color_clip = color_clip.set_opacity(0.6)  # pylint: disable=assignment-from-no-return
             color_clip = color_clip.set_position(pos=(0, y_location))
             clips.append(color_clip)
 
         txt = med.TextClip(video_text, font='Arial', color='white', fontsize=fontsize)
+
         txt_y_location = (box_height - txt.h) // 2 + y_location
 
         if center:
             txt_left_margin = (width - txt.w) // 2
         else:
-            txt_left_margin = 50
+            txt_left_margin = 20
 
         # pylint: disable=assignment-from-no-return
         if move:
@@ -269,6 +272,7 @@ class Moviepy(pypopquiz.backends.backend.Backend):
         else:
             txt_mov = txt.set_position((txt_left_margin, txt_y_location))
         # pylint: enable=assignment-from-no-return
+        txt_mov = txt_mov.set_fps(Moviepy.DEFAULT_FPS)  # pylint: disable=assignment-from-no-return
 
         if interval:
             # Fade text in and out
@@ -282,7 +286,17 @@ class Moviepy(pypopquiz.backends.backend.Backend):
         clips.append(txt_mov)
 
         duration = video.duration
-        video = med.CompositeVideoClip(clips, use_bgclip=interval is not None)
+        if isinstance(video, med.CompositeVideoClip):
+            # Add the new set of clips to the existing composition
+            clips = video.clips + clips
+            duration = video.duration
+        else:
+            # Add the input video as the first in the list
+            clips = [video] + clips
+
+        # Build a new composition out of the original clip and the text overlay.
+        # video = med.CompositeVideoClip(clips, use_bgclip=interval is not None)
+        video = med.CompositeVideoClip(clips)
         video.duration = duration
         return video
 
@@ -359,7 +373,7 @@ class Moviepy(pypopquiz.backends.backend.Backend):
 
         if not dry_run:
             with Moviepy.tmp_intermediate_file(file_name_out) as tmp_out:
-                self.clip.write_videofile(str(tmp_out), threads=2)
+                self.clip.write_videofile(str(tmp_out), threads=2)  # write_logfile=True
 
         # Close the file reader (typically terminates an ffmpeg process)
         self.close_readers()
