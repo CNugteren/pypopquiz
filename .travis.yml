@@ -6,6 +6,7 @@ python:
   - "3.6"
 
 install:
+  - apt install ffmpeg
   - pip install mypy pylint
   - pylint --version
   - mypy --version
