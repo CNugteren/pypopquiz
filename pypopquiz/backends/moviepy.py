@@ -47,7 +47,7 @@ def tone_in_interval(clip: med.AudioClip, interval: Tuple[float, float], freq_hz
             return original
 
         # t is an array of timestamps:
-        selector = np.logical_and(interval[0] < t, interval[1] > t)
+        selector = np.logical_and(interval[0] < t, interval[1] > t)  # pylint: disable=assignment-from-no-return
         t_offset = t - interval[0]
         tone = np.array(np.sin(freq_hz * np.pi * t_offset))
 
@@ -85,6 +85,7 @@ class Moviepy(pypopquiz.backends.backend.Backend):
             else:
                 # Assume video otherwise
                 self.clip = med.VideoFileClip(str(source_file), audio=has_audio)
+                self.clip.set_fps(Moviepy.DEFAULT_FPS)
                 self.reader_refs.append(self.clip)
 
         elif has_audio:
