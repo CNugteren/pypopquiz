@@ -32,8 +32,7 @@ def get_interval_length(interval: Tuple[int, int]) -> int:
 
 def filter_stream_video(stream: VideoBackend, kind: str, interval: Tuple[int, int], answer_texts: List[str],
                         reverse: bool, fade_amount_s: int = 3, delay_answer_text_s: int = 3,
-                        answer_label_events: Optional[List] = None,
-                        crossfade_duration: float = 0) -> VideoBackend:
+                        answer_label_events: Optional[List] = None) -> VideoBackend:
 
     """Adds ffmpeg filters to the stream, processing a single video stream"""
 
@@ -56,7 +55,7 @@ def filter_stream_video(stream: VideoBackend, kind: str, interval: Tuple[int, in
         # Remainder is shown in the center of the video
         for text_id, answer_text in enumerate(answer_texts[2:]):
             stream.draw_text(answer_text, 0.5 - 0.1 * len(answer_texts[2:]) + 0.2 * text_id)
-    stream.fade_in_and_out(fade_amount_s, get_interval_length(interval))  # , fade_in=crossfade_duration == 0)
+    stream.fade_in_and_out(fade_amount_s, get_interval_length(interval))
     return stream
 
 
@@ -74,13 +73,12 @@ def filter_stream_videos(stream: VideoBackend, kind: str, round_id: int, questio
     stream.draw_text_in_box(question_text, total_duration, move=True, top=False)
     repeat_stream(stream, repetitions)
     if spacer_txt != "" and kind == "question":
-        stream.add_spacer(spacer_txt, duration_s=2)
+        stream.add_spacer(spacer_txt, duration_s=4)
     return stream
 
 
 def filter_stream_audio(stream: VideoBackend, interval: Tuple[int, int], reverse: bool,
-                        fade_amount_s: int = 3, beep_events: Optional[List] = None,
-                        crossfade_duration: float = 0) -> VideoBackend:
+                        fade_amount_s: int = 3, beep_events: Optional[List] = None) -> VideoBackend:
     """Adds ffmpeg filters to the stream, producing a single audio stream"""
     if beep_events is not None:
         for event in beep_events:
@@ -90,7 +88,7 @@ def filter_stream_audio(stream: VideoBackend, interval: Tuple[int, int], reverse
     stream.trim(start_s=interval[0], end_s=interval[1])
     if reverse:
         stream.reverse()
-    stream.fade_in_and_out(fade_amount_s, get_interval_length(interval))  # , fade_in=crossfade_duration == 0)
+    stream.fade_in_and_out(fade_amount_s, get_interval_length(interval))
     return stream
 
 
@@ -98,7 +96,7 @@ def filter_stream_audios(stream: VideoBackend, kind: str, repetitions: int, spac
     """Adds ffmpeg filters to the stream, producing the combined audio stream"""
     repeat_stream(stream, repetitions)
     if spacer_txt != "" and kind == "question":
-        stream.add_silence(duration_s=2)  # for the spacer
+        stream.add_silence(duration_s=4)  # for the spacer
     return stream
 
 
@@ -168,8 +166,7 @@ def create_video(kind: str, round_id: int, question: Dict, question_id: int, out
 
         stream_video = backend_cls(video_files[video_id], has_video=True, has_audio=False, width=width, height=height)
         stream_video = filter_stream_video(stream_video, kind, interval, answer_texts[video_id % len(answer_texts)],
-                                           reverse, answer_label_events=answer_label_events,
-                                           crossfade_duration=crossfade_duration)
+                                           reverse, answer_label_events=answer_label_events)
 
         if stream_videos is None:
             stream_videos = stream_video
@@ -192,8 +189,7 @@ def create_video(kind: str, round_id: int, question: Dict, question_id: int, out
         crossfade_duration = audio_info.get("crossfade_duration", 0)
 
         stream_audio = backend_cls(audio_files[audio_id], has_video=False, has_audio=True, width=width, height=height)
-        stream_audio = filter_stream_audio(stream_audio, interval, reverse, beep_events=beep_events,
-                                           crossfade_duration=crossfade_duration)
+        stream_audio = filter_stream_audio(stream_audio, interval, reverse, beep_events=beep_events)
 
         if stream_audios is None:
             stream_audios = stream_audio
@@ -234,6 +230,9 @@ def create_text_video(file_name: Path, source_texts: List[str], duration: int,
     num_texts = len(source_texts)
     for text_id, source_text in enumerate(source_texts):
         stream.draw_text(source_text, 0.5 - 0.1 * num_texts + 0.2 * text_id)
+
+    stream.fade_in_and_out(1, duration)
+
     audio = backend_cls.create_silent_stream(duration, width=width, height=height)
     stream.add_audio(audio)
     file_name_out = stream.run(file_name)
