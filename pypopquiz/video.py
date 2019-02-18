@@ -72,7 +72,7 @@ def filter_stream_videos(stream: VideoBackend, kind: str, round_id: int, questio
 
     stream.draw_text_in_box(question_text, total_duration, move=True, top=False)
     repeat_stream(stream, repetitions)
-    if spacer_txt != "" and kind == "question":
+    if spacer_txt != "" and (kind == "question" or is_example):
         stream.add_spacer(spacer_txt, duration_s=4)
     return stream
 
@@ -92,10 +92,11 @@ def filter_stream_audio(stream: VideoBackend, interval: Tuple[int, int], reverse
     return stream
 
 
-def filter_stream_audios(stream: VideoBackend, kind: str, repetitions: int, spacer_txt: str = "") -> VideoBackend:
+def filter_stream_audios(stream: VideoBackend, kind: str, repetitions: int,
+                         spacer_txt: str = "", is_example: bool = False) -> VideoBackend:
     """Adds ffmpeg filters to the stream, producing the combined audio stream"""
     repeat_stream(stream, repetitions)
-    if spacer_txt != "" and kind == "question":
+    if spacer_txt != "" and (kind == "question" or is_example):
         stream.add_silence(duration_s=4)  # for the spacer
     return stream
 
@@ -155,8 +156,8 @@ def create_video(kind: str, round_id: int, question: Dict, question_id: int, out
     # Process the video(s)
     stream_videos = None
     total_duration = 0
-    for video_id, video_info in enumerate(question[kind+"_video"]):
-        ppq.io.log("Processing video input {:d}/{:d}".format(video_id + 1, len(question[kind+"_video"])))
+    for video_id, video_info in enumerate(question[kind + "_video"]):
+        ppq.io.log("Processing video input {:d}/{:d}".format(video_id + 1, len(question[kind + "_video"])))
 
         interval = ppq.io.get_interval_in_s(video_info["interval"])
         total_duration += get_interval_length(interval)
@@ -165,6 +166,9 @@ def create_video(kind: str, round_id: int, question: Dict, question_id: int, out
         crossfade_duration = video_info.get("crossfade_duration", 0)
 
         stream_video = backend_cls(video_files[video_id], has_video=True, has_audio=False, width=width, height=height)
+
+        # Use modulo-answer texts here, to catch the cases where there is 1 answer, while the
+        # answer video is built from 2 (concatenated) clips
         stream_video = filter_stream_video(stream_video, kind, interval, answer_texts[video_id % len(answer_texts)],
                                            reverse, answer_label_events=answer_label_events)
 
@@ -180,8 +184,8 @@ def create_video(kind: str, round_id: int, question: Dict, question_id: int, out
 
     # Process the audio(s)
     stream_audios = None
-    for audio_id, audio_info in enumerate(question[kind+"_audio"]):
-        ppq.io.log("Processing audio input {:d}/{:d}".format(audio_id + 1, len(question[kind+"_audio"])))
+    for audio_id, audio_info in enumerate(question[kind + "_audio"]):
+        ppq.io.log("Processing audio input {:d}/{:d}".format(audio_id + 1, len(question[kind + "_audio"])))
 
         interval = ppq.io.get_interval_in_s(audio_info["interval"])
         reverse = audio_info.get("reverse", False)
@@ -198,7 +202,7 @@ def create_video(kind: str, round_id: int, question: Dict, question_id: int, out
 
     ppq.io.log("Processing final audio")
     assert stream_audios is not None
-    stream_audio = filter_stream_audios(stream_audios, kind, repetitions, spacer_txt=spacer_txt)
+    stream_audio = filter_stream_audios(stream_audios, kind, repetitions, spacer_txt=spacer_txt, is_example=is_example)
 
     # Combine the audio and video
     stream_videos.add_audio(stream_audio)
