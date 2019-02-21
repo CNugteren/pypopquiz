@@ -55,6 +55,7 @@ def filter_stream_video(stream: VideoBackend, kind: str, interval: Tuple[int, in
         # Remainder is shown in the center of the video
         for text_id, answer_text in enumerate(answer_texts[2:]):
             stream.draw_text(answer_text, 0.5 - 0.1 * len(answer_texts[2:]) + 0.2 * text_id)
+
     stream.fade_in_and_out(fade_amount_s, get_interval_length(interval))
     return stream
 
@@ -122,6 +123,17 @@ def get_sources(question: Dict, media: str, kind: str) -> List[Dict]:
     return [sources[source_index] for source_index in source_indices]
 
 
+def unlink_if_exists_and_not_using_as_cached(file_name: Path, use_cached_video_files: bool) -> bool:
+    """Conditionally unlink video file, unless we want to use cached videos."""
+    generate_video = True
+    if file_name.exists():
+        if use_cached_video_files:
+            generate_video = False
+        else:
+            file_name.unlink()  # deletes a previous version
+    return generate_video
+
+
 def create_video(kind: str, round_id: int, question: Dict, question_id: int, output_dir: Path, round_dir: Path,
                  answer_texts: List[List[str]], width: int, height: int,
                  backend: str = 'ffmpeg', spacer_txt: str = "",
@@ -143,13 +155,7 @@ def create_video(kind: str, round_id: int, question: Dict, question_id: int, out
     # Force output file to be a video
     target_format = 'mp4'
     file_name = round_dir / ("{:02d}_{:02d}_{:s}.{:s}".format(round_id, question_id, kind, target_format))
-
-    generate_video = True
-    if file_name.exists():
-        if use_cached_video_files:
-            generate_video = False
-        else:
-            file_name.unlink()  # deletes a previous version
+    generate_video = unlink_if_exists_and_not_using_as_cached(file_name, use_cached_video_files)
 
     backend_cls = get_backend(backend)
 
@@ -227,7 +233,8 @@ def combine_videos(video_files: List[Path], kind: str, round_id: int, output_dir
 
 
 def create_text_video(file_name: Path, source_texts: List[str], duration: int,
-                      width: int, height: int, backend: str = 'ffmpeg') -> Path:
+                      width: int, height: int, use_cached_video_files: bool = False,
+                      backend: str = 'ffmpeg') -> Path:
     """Generates a video with text on a black background"""
     backend_cls = get_backend(backend)
     stream = backend_cls.create_empty_stream(duration, width=width, height=height)
@@ -239,7 +246,10 @@ def create_text_video(file_name: Path, source_texts: List[str], duration: int,
 
     audio = backend_cls.create_silent_stream(duration, width=width, height=height)
     stream.add_audio(audio)
-    file_name_out = stream.run(file_name)
+
+    generate_video = unlink_if_exists_and_not_using_as_cached(file_name, use_cached_video_files)
+
+    file_name_out = stream.run(file_name, dry_run=not generate_video)
     return file_name_out
 
 

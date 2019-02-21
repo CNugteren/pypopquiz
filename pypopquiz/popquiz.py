@@ -49,10 +49,12 @@ def popquiz(input_file: Path, output_dir: Path, backend: str, downloader: str, w
     theme = '"{:s}"'.format(input_data["theme"])
     q_title = ppq.video.create_text_video(round_dir / ("{:02d}_questions_title.mp4".format(round_id)),
                                           ["Round {:02d}".format(round_id), theme],
-                                          title_text_duration_s, width=width, height=height, backend=backend)
+                                          title_text_duration_s, width=width, height=height,
+                                          use_cached_video_files=use_cached_video_files, backend=backend)
     a_title = ppq.video.create_text_video(round_dir / ("{:02d}_answers_title.mp4".format(round_id)),
                                           ["Answers for round {:02d}".format(round_id), theme],
-                                          title_text_duration_s, width=width, height=height, backend=backend)
+                                          title_text_duration_s, width=width, height=height,
+                                          use_cached_video_files=use_cached_video_files, backend=backend)
 
     q_videos, a_videos = [q_title], [a_title]
     for index, question in enumerate(input_data["questions"]):
