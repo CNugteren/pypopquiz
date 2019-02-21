@@ -59,7 +59,7 @@ def tone_in_interval(clip: med.AudioClip, interval: Tuple[float, float], freq_hz
 
 class Moviepy(pypopquiz.backends.backend.Backend):
     """Moviepy backend."""
-    DEFAULT_FPS = 30
+    DEFAULT_FPS = 25
 
     def __init__(self, source_file: Path, has_video: bool, has_audio: bool,
                  width: int, height: int, duration: Optional[float] = None) -> None:
@@ -175,7 +175,6 @@ class Moviepy(pypopquiz.backends.backend.Backend):
                         fade_out: bool = True) -> None:
         """Adds a fade-in and fade-out to/from black for the audio and video stream"""
         if self.has_video:
-
             if fade_in:
                 self.clip = self.clip.fx(vfx.fadein, duration_s).\
                     fx(afx.audio_fadein, duration_s)
@@ -267,11 +266,12 @@ class Moviepy(pypopquiz.backends.backend.Backend):
             color_clip = med.ColorClip(size=(video_w, box_height), color=(0, 0, 0))
             color_clip = color_clip.set_fps(Moviepy.DEFAULT_FPS)  # pylint: disable=assignment-from-no-return
 
-            color_clip = color_clip.set_opacity(0.6)  # pylint: disable=assignment-from-no-return
+            color_clip = color_clip.set_opacity(0.5)  # pylint: disable=assignment-from-no-return
             color_clip = color_clip.set_position(pos=(0, y_location))
             clips.append(color_clip)
 
-        txt = med.TextClip(video_text, font='Arial', color='white', fontsize=fontsize)
+        stroke_color = 'black' if not on_box else None
+        txt = med.TextClip(video_text, font='Bauhaus-93', color='white', stroke_color=stroke_color, fontsize=fontsize)
 
         txt_y_location = (box_height - txt.h) // 2 + y_location
 
@@ -301,13 +301,8 @@ class Moviepy(pypopquiz.backends.backend.Backend):
         clips.append(txt_mov)
 
         duration = video.duration
-        if isinstance(video, med.CompositeVideoClip):
-            # Add the new set of clips to the existing composition
-            clips = video.clips + clips
-            duration = video.duration
-        else:
-            # Add the input video as the first in the list
-            clips = [video] + clips
+        # Add the input video as the first in the list
+        clips = [video] + clips
 
         # Build a new composition out of the original clip and the text overlay.
         # video = med.CompositeVideoClip(clips, use_bgclip=interval is not None)
