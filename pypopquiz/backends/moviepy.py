@@ -1,5 +1,6 @@
 """Moviepy backend for video editing"""
 
+import math
 from pathlib import Path
 import typing
 from typing import Callable, List, Optional, Tuple, Union
@@ -86,6 +87,7 @@ class Moviepy(pypopquiz.backends.backend.Backend):
                 # Assume video otherwise
                 self.clip = med.VideoFileClip(str(source_file), audio=has_audio)
                 self.clip.set_fps(Moviepy.DEFAULT_FPS)
+
                 self.reader_refs.append(self.clip)
 
         elif has_audio:
@@ -104,6 +106,10 @@ class Moviepy(pypopquiz.backends.backend.Backend):
             duration = typing.cast(float, duration)
             self.clip = self.create_color_clip((width, height), (0, 0, 0), duration)
             self.has_video = True
+
+        # Workaround moviepy issues: Occasionally, clips gain fractional seconds of duration
+        # due to rounding errors. Flooring them back keeps things reasonably sane most of the time.
+        self.clip = self.clip.set_duration(math.floor(self.clip.duration))
 
     @classmethod
     def create_empty_stream(cls, duration: int, width: int, height: int) -> 'Moviepy':
@@ -159,6 +165,7 @@ class Moviepy(pypopquiz.backends.backend.Backend):
                 clips[1] = clips[1].set_start(max(0, clips[0].duration - crossfade_duration))
                 clips[1] = clips[1].fx(transfx.crossfadein, crossfade_duration)
                 self.clip = med.CompositeVideoClip([clips[0], clips[1]])
+                # TODO: consider calling set_duration?
                 self.clip.duration = clips[0].duration + clips[1].duration - crossfade_duration
         else:
             if crossfade_duration == 0:
@@ -222,7 +229,7 @@ class Moviepy(pypopquiz.backends.backend.Backend):
         duration = self.clip.duration
         clips = [self.create_color_clip((self.width, self.height), (0, 0, 0), duration), scaled_clip]
         self.clip = med.CompositeVideoClip(clips)
-        self.clip.duration = duration
+        self.clip = self.clip.set_duration(duration)
 
     def draw_text(self, video_text: str, height_fraction: float) -> None:
         """Draws text in the center of the video at a certain height fraction"""
