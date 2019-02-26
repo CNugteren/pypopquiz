@@ -1,5 +1,4 @@
-PyPopQuiz: A Python/ffmpeg-based popquiz creator
-================
+# PyPopQuiz: A Python/ffmpeg-based popquiz creator
 
 [![Build Status](https://travis-ci.org/CNugteren/pypopquiz.svg?branch=master)](https://travis-ci.org/CNugteren/pypopquiz/branches)
 
@@ -9,13 +8,11 @@ PyPopQuiz is still under development, head back soon if you are looking for a fu
 
 To use the moviepy backend, add `-b moviepy` to the command line.
 
-Requirements
--------------
+## Requirements
 
 Tested on Linux and Windows. Requires Python 3.5 or newer. Requires ffmpeg and the Python packages `pytube` and `ffmpeg-python` or `moviepy`, installed as part of the requirements.
 
-Moviepy
-_______
+### Moviepy
 
 On Windows: Set environment variables pointing to ffmpeg and imagemagick (convert) for moviepy to use:
 
@@ -25,8 +22,7 @@ On Windows: Set environment variables pointing to ffmpeg and imagemagick (conver
 
 [Patch for no audio issue](https://github.com/Sv3n/moviepy/commit/130160de539bbdb0473bb2e994ed56a58f9f9ab0)
 
-Tests
--------------
+## Tests
 
 The tests are currently still quite limited, but you can already run the linters and/or unittests, e.g. from the root:
 
@@ -35,8 +31,7 @@ The tests are currently still quite limited, but you can already run the linters
     python -m unittest discover test
 
 
-Feature list / roadmap
--------------
+## Feature list / roadmap
 
 | Input/output                     | Status      |
 |----------------------------------|-------------|
