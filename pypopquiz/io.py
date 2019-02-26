@@ -184,8 +184,8 @@ def get_missing_interval(duration: int) -> List[str]:
     return ["0:00", "{:d}:{:2d}".format(minutes, seconds)]
 
 
-def set_missing_intervals(input_data: Dict) -> None:
-    """Set intervals to the full duration if not specified
+def set_missing_intervals_from_av_pairs(input_data: Dict) -> None:
+    """Set intervals based in the complementary video or audio clip
 
     If the sources of a video and audio clip are the same, but one misses an
     interval list, or if one of the sources is an image, copy the interval.
@@ -201,30 +201,32 @@ def set_missing_intervals(input_data: Dict) -> None:
     for index, question in enumerate(input_data["questions"]):
         sources = question['sources']
         for sub_type in ("question_video", "answer_video"):
-            for s0, s1 in zip(question[sub_type], question[other[sub_type]]):
-                # s0 and s1 are now video and audio pairs
-                s1_is_img = sources[s0['source']]['source'] == 'image'
-                s0_is_img = sources[s0['source']]['source'] == 'image'
+            for video, audio in zip(question[sub_type], question[other[sub_type]]):
+                audio_is_img = sources[video['source']]['source'] == 'image'
+                video_is_img = sources[video['source']]['source'] == 'image'
 
-                if s0['source'] != s1['source'] and not s0_is_img and not s1_is_img:
+                if video['source'] != audio['source'] and not video_is_img and not audio_is_img:
                     continue
 
-                if "interval" not in s0 and "interval" in s1:
-                    s0["interval"] = s1["interval"].copy()
-                    if s0_is_img:
+                if "interval" not in video and "interval" in audio:
+                    video["interval"] = audio["interval"].copy()
+                    if video_is_img:
                         # Translate the interval back to starting at 0 for images
-                        s0["interval"] = get_missing_interval(get_interval_duration(s0["interval"]))
+                        video["interval"] = get_missing_interval(get_interval_duration(video["interval"]))
                     log("Set interval for question {:d}'s '{:s}' item to {:s}".
-                        format(index, sub_type, str(s0["interval"])))
+                        format(index, sub_type, str(video["interval"])))
 
-                if "interval" not in s1 and "interval" in s0:
-                    s1["interval"] = s0["interval"].copy()
-                    if s1_is_img:
+                if "interval" not in audio and "interval" in video:
+                    audio["interval"] = video["interval"].copy()
+                    if audio_is_img:
                         # Translate the interval back to starting at 0 for images
-                        s1["interval"] = get_missing_interval(get_interval_duration(s1["interval"]))
+                        audio["interval"] = get_missing_interval(get_interval_duration(audio["interval"]))
                     log("Set interval for question {:d}'s '{:s}' item to {:s}".
-                        format(index, other[sub_type], str(s1["interval"])))
+                        format(index, other[sub_type], str(audio["interval"])))
 
+
+def set_missing_intervals_from_duration(input_data: Dict) -> None:
+    """Set intervals to the full duration if not specified"""
     for index, question in enumerate(input_data["questions"]):
         for sub_type in ("question_video", "question_audio", "answer_video", "answer_audio"):
             if sub_type not in question:
@@ -324,7 +326,8 @@ def read_input(file_name: Path) -> Dict:
         input_data = json.loads(lines)
         verify_schema(input_data)
         ppq.iovarsubs.substitute_variables(input_data)
-        set_missing_intervals(input_data)
+        set_missing_intervals_from_av_pairs(input_data)
+        set_missing_intervals_from_duration(input_data)
         set_missing_image_durations(input_data)
         set_missing_media(input_data)
         verify_json_input(input_data)
