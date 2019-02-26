@@ -201,6 +201,9 @@ def set_missing_intervals_from_av_pairs(input_data: Dict) -> None:
     for index, question in enumerate(input_data["questions"]):
         sources = question['sources']
         for sub_type in ("question_video", "answer_video"):
+            if sub_type not in question or other[sub_type] not in question:
+                continue
+
             for video, audio in zip(question[sub_type], question[other[sub_type]]):
                 audio_is_img = sources[video['source']]['source'] == 'image'
                 video_is_img = sources[video['source']]['source'] == 'image'
