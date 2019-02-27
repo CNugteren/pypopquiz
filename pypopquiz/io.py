@@ -240,10 +240,10 @@ def set_missing_intervals_from_duration(input_data: Dict) -> None:
                     source = question["sources"][source_index]
                     if "duration" not in source.keys():
                         raise ValueError("Missing interval for question {:d}'s '{:s}'".format(index, sub_type))
-                    else:
-                        sub_item["interval"] = get_missing_interval(source["duration"])
-                        log("Set duration for question {:d}'s '{:s}' to {:s}".
-                            format(index, sub_type, str(sub_item["interval"])))
+
+                    sub_item["interval"] = get_missing_interval(source["duration"])
+                    log("Set duration for question {:d}'s '{:s}' to {:s}".
+                        format(index, sub_type, str(sub_item["interval"])))
 
 
 def set_missing_media(input_data: Dict) -> None:
