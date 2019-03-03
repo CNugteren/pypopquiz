@@ -231,11 +231,13 @@ class Moviepy(pypopquiz.backends.backend.Backend):
         self.clip = med.CompositeVideoClip(clips)
         self.clip = self.clip.set_duration(duration)
 
-    def draw_text(self, video_text: str, height_fraction: float) -> None:
+    def draw_text(self, video_text: str, height_fraction: float,
+                  interval: Optional[Tuple[float, float]] = None) -> None:
         """Draws text in the center of the video at a certain height fraction"""
         assert self.has_video
         duration_s = 0  # Don't care, uses interval
-        interval = (0, self.clip.duration)
+        if interval is None:
+            interval = (0, self.clip.duration)
         self.clip = Moviepy.draw_text_in_box_on_video(
             self.clip, video_text, duration_s, self.width, self.height, box_height=self.get_box_height(),
             move=False, top=False, on_box=False, center=True, vpos=height_fraction,
@@ -316,15 +318,6 @@ class Moviepy(pypopquiz.backends.backend.Backend):
         video = med.CompositeVideoClip(clips)
         video.duration = duration
         return video
-
-    def overlay_fading_text(self, text: str, interval: Tuple[float, float]):
-        """Overlay fading text on the clip."""
-        assert self.has_video
-        duration_s = 0  # Don't care
-        self.clip = Moviepy.draw_text_in_box_on_video(
-            self.clip, text, duration_s, self.width, self.height, box_height=self.get_box_height(),
-            move=False, top=False, on_box=False, center=True, interval=interval, fontsize=self.get_font_size()
-        )
 
     def add_spacer(self, text: str, duration_s: float) -> None:
         """Add a text spacer to the start of the clip."""

@@ -55,7 +55,8 @@ class Backend(abc.ABC):
                          delay_in_sec: Optional[int] = None) -> None:
         """Draws a semi-transparent box either at the top or bottom and writes text in it, optionally scrolling by"""
 
-    def draw_text(self, video_text: str, height_fraction: float) -> None:
+    def draw_text(self, video_text: str, height_fraction: float,
+                  interval: Optional[Tuple[float, float]] = None) -> None:
         """Draws text in the center of the video at a certain height fraction"""
 
     @abc.abstractmethod
@@ -93,9 +94,6 @@ class Backend(abc.ABC):
 
     def replace_audio_by_beep(self, interval: Tuple[float, float], freq_hz: int = 1500) -> None:
         """Replace the original audio by a beep in a particular interval."""
-
-    def overlay_fading_text(self, text: str, interval: Tuple[float, float]):
-        """Overlay fading text on the clip."""
 
     @staticmethod
     @contextlib.contextmanager

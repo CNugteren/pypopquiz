@@ -40,21 +40,27 @@ def filter_stream_video(stream: VideoBackend, kind: str, interval: Tuple[int, in
     if reverse:
         stream.reverse()
     stream.scale_video()
-    if kind == "answer" and answer_label_events is not None:
-        for event in answer_label_events:
-            evt_interval = event["interval"]
-            interval_sec = pypopquiz.io.get_interval_in_fractional_s(evt_interval)
-            offset_interval_sec = (interval_sec[0] - interval[0], interval_sec[1] - interval[0])
-            ppq.io.log('overlay_fading_text: {}'.format(event["answer"]))
-            stream.overlay_fading_text(event["answer"], interval=offset_interval_sec)
     if kind == "answer":
         # (up to the) first two answers are joined together with " - " and shown at the top
         answer_text = " - ".join(answer_texts[:2])
         stream.draw_text_in_box(answer_text, get_interval_length(interval), move=False, top=True,
                                 delay_in_sec=delay_answer_text_s)
         # Remainder is shown in the center of the video
-        for text_id, answer_text in enumerate(answer_texts[2:]):
+        text_id = 0
+        for answer_text in answer_texts[2:]:
             stream.draw_text(answer_text, 0.5 - 0.1 * len(answer_texts[2:]) + 0.2 * text_id)
+            text_id += 1
+
+        if answer_label_events is not None:
+            for event in answer_label_events:
+                interval_sec = pypopquiz.io.get_interval_in_fractional_s(event["interval"])
+                # Create interval relative to start of clip instead of source video
+                offset_interval_sec = (interval_sec[0] - interval[0], interval_sec[1] - interval[0])
+                ppq.io.log('overlay_fading_text: {}'.format(event["answer"]))
+                stream.draw_text(event["answer"],
+                                 0.5 - 0.1 * len(answer_label_events) + 0.2 * text_id,
+                                 interval=offset_interval_sec)
+                text_id += 1
 
     stream.fade_in_and_out(fade_amount_s, get_interval_length(interval))
     return stream

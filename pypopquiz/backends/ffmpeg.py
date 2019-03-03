@@ -2,7 +2,7 @@
 
 import subprocess
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any, Optional, Tuple
 
 import pkg_resources
 import ffmpeg
@@ -102,7 +102,8 @@ class FFMpeg(ppq.backends.backend.Backend):
         self.stream_v = stream_v.drawtext(text=video_text, fontcolor="white", fontsize=self.get_font_size(),
                                           x=x_location_text, y=y_location_text)
 
-    def draw_text(self, video_text: str, height_fraction: float) -> None:
+    def draw_text(self, video_text: str, height_fraction: float,
+                  interval: Optional[Tuple[float, float]] = None) -> None:
         """Draws text in the center of the video at a certain height fraction"""
         if not self.has_video:
             return
