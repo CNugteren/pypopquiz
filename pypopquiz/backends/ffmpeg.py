@@ -2,7 +2,7 @@
 
 import subprocess
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any, Optional, Tuple
 
 import pkg_resources
 import ffmpeg
@@ -42,7 +42,8 @@ class FFMpeg(ppq.backends.backend.Backend):
             joined = ffmpeg.concat(stream_a[0].filter("afifo"), stream_a[1].filter("afifo"), v=0, a=1).node
             self.stream_a = joined[0]
 
-    def combine(self, other: 'FFMpeg', other_first: bool = False) -> None:  # type: ignore
+    def combine(self, other: 'FFMpeg', other_first: bool = False,  # type: ignore
+                crossfade_duration: float = 0) -> None:
         """Combines this stream with another stream"""
         first_stream = other if other_first else self
         second_stream = self if other_first else other
@@ -55,16 +56,21 @@ class FFMpeg(ppq.backends.backend.Backend):
                                    second_stream.stream_a.filter("afifo"), v=0, a=1).node
             self.stream_a = joined[0]
 
-    def fade_in_and_out(self, duration_s: int, video_length_s: int) -> None:
+    def fade_in_and_out(self, duration_s: int, video_length_s: int, fade_in: bool = True,
+                        fade_out: bool = True) -> None:
         """Adds a fade-in and fade-out to/from black for the audio and video stream"""
         if self.has_video:
-            stream_v = self.stream_v.filter("fade", type="in", start_time=0, duration=duration_s)
-            self.stream_v = stream_v.filter("fade", type="out", start_time=video_length_s - duration_s,
-                                            duration=duration_s)
+            if fade_in:
+                self.stream_v = self.stream_v.filter("fade", type="in", start_time=0, duration=duration_s)
+            if fade_out:
+                self.stream_v = self.stream_v.filter("fade", type="out", start_time=video_length_s - duration_s,
+                                                     duration=duration_s)
         if self.has_audio:
-            stream_a = self.stream_a.filter("afade", type="in", start_time=0, duration=duration_s)
-            self.stream_a = stream_a.filter("afade", type="out", start_time=video_length_s - duration_s,
-                                            duration=duration_s)
+            if fade_in:
+                self.stream_a = self.stream_a.filter("afade", type="in", start_time=0, duration=duration_s)
+            if fade_out:
+                self.stream_a = self.stream_a.filter("afade", type="out", start_time=video_length_s - duration_s,
+                                                     duration=duration_s)
 
     def scale_video(self) -> None:
         """Scales the video and pads if necessary to the requested dimensions"""
@@ -96,7 +102,8 @@ class FFMpeg(ppq.backends.backend.Backend):
         self.stream_v = stream_v.drawtext(text=video_text, fontcolor="white", fontsize=self.get_font_size(),
                                           x=x_location_text, y=y_location_text)
 
-    def draw_text(self, video_text: str, height_fraction: float) -> None:
+    def draw_text(self, video_text: str, height_fraction: float,
+                  interval: Optional[Tuple[float, float]] = None) -> None:
         """Draws text in the center of the video at a certain height fraction"""
         if not self.has_video:
             return

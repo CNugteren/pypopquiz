@@ -1,9 +1,14 @@
-dist: trusty
+dist: xenial
 language: python
 cache: pip
 python:
   - "3.5"
   - "3.6"
+
+addons:
+  apt:
+    packages:
+    - ffmpeg
 
 install:
   - pip install mypy pylint

@@ -33,17 +33,12 @@ def get_interval_length(interval: Tuple[int, int]) -> int:
 def filter_stream_video(stream: VideoBackend, kind: str, interval: Tuple[int, int], answer_texts: List[str],
                         reverse: bool, fade_amount_s: int = 3, delay_answer_text_s: int = 3,
                         answer_label_events: Optional[List] = None) -> VideoBackend:
+
     """Adds ffmpeg filters to the stream, processing a single video stream"""
-    if kind == "answer" and answer_label_events is not None:
-        for event in answer_label_events:
-            evt_interval = event["interval"]
-            interval_sec = pypopquiz.io.get_interval_in_fractional_s(evt_interval)
-            stream.overlay_fading_text(event["answer"], interval=interval_sec)
 
     stream.trim(start_s=interval[0], end_s=interval[1])
     if reverse:
         stream.reverse()
-    stream.fade_in_and_out(fade_amount_s, get_interval_length(interval))
     stream.scale_video()
     if kind == "answer":
         # (up to the) first two answers are joined together with " - " and shown at the top
@@ -51,8 +46,23 @@ def filter_stream_video(stream: VideoBackend, kind: str, interval: Tuple[int, in
         stream.draw_text_in_box(answer_text, get_interval_length(interval), move=False, top=True,
                                 delay_in_sec=delay_answer_text_s)
         # Remainder is shown in the center of the video
-        for text_id, answer_text in enumerate(answer_texts[2:]):
+        text_id = 0
+        for answer_text in answer_texts[2:]:
             stream.draw_text(answer_text, 0.5 - 0.1 * len(answer_texts[2:]) + 0.2 * text_id)
+            text_id += 1
+
+        if answer_label_events is not None:
+            for event in answer_label_events:
+                interval_sec = pypopquiz.io.get_interval_in_fractional_s(event["interval"])
+                # Create interval relative to start of clip instead of source video
+                offset_interval_sec = (interval_sec[0] - interval[0], interval_sec[1] - interval[0])
+                ppq.io.log('overlay_fading_text: {}'.format(event["answer"]))
+                stream.draw_text(event["answer"],
+                                 0.5 - 0.1 * len(answer_label_events) + 0.2 * text_id,
+                                 interval=offset_interval_sec)
+                text_id += 1
+
+    stream.fade_in_and_out(fade_amount_s, get_interval_length(interval))
     return stream
 
 
@@ -69,8 +79,8 @@ def filter_stream_videos(stream: VideoBackend, kind: str, round_id: int, questio
 
     stream.draw_text_in_box(question_text, total_duration, move=True, top=False)
     repeat_stream(stream, repetitions)
-    if spacer_txt != "" and kind == "question":
-        stream.add_spacer(spacer_txt, duration_s=2)
+    if spacer_txt != "" and (kind == "question" or is_example):
+        stream.add_spacer(spacer_txt, duration_s=4)
     return stream
 
 
@@ -89,11 +99,12 @@ def filter_stream_audio(stream: VideoBackend, interval: Tuple[int, int], reverse
     return stream
 
 
-def filter_stream_audios(stream: VideoBackend, kind: str, repetitions: int, spacer_txt: str = "") -> VideoBackend:
+def filter_stream_audios(stream: VideoBackend, kind: str, repetitions: int,
+                         spacer_txt: str = "", is_example: bool = False) -> VideoBackend:
     """Adds ffmpeg filters to the stream, producing the combined audio stream"""
     repeat_stream(stream, repetitions)
-    if spacer_txt != "" and kind == "question":
-        stream.add_silence(duration_s=2)  # for the spacer
+    if spacer_txt != "" and (kind == "question" or is_example):
+        stream.add_silence(duration_s=4)  # for the spacer
     return stream
 
 
@@ -118,6 +129,17 @@ def get_sources(question: Dict, media: str, kind: str) -> List[Dict]:
     return [sources[source_index] for source_index in source_indices]
 
 
+def unlink_if_exists_and_not_using_as_cached(file_name: Path, use_cached_video_files: bool) -> bool:
+    """Conditionally unlink video file, unless we want to use cached videos."""
+    generate_video = True
+    if file_name.exists():
+        if use_cached_video_files:
+            generate_video = False
+        else:
+            file_name.unlink()  # deletes a previous version
+    return generate_video
+
+
 def create_video(kind: str, round_id: int, question: Dict, question_id: int, output_dir: Path, round_dir: Path,
                  answer_texts: List[List[str]], width: int, height: int,
                  backend: str = 'ffmpeg', spacer_txt: str = "",
@@ -139,32 +161,34 @@ def create_video(kind: str, round_id: int, question: Dict, question_id: int, out
     # Force output file to be a video
     target_format = 'mp4'
     file_name = round_dir / ("{:02d}_{:02d}_{:s}.{:s}".format(round_id, question_id, kind, target_format))
-
-    generate_video = True
-    if file_name.exists():
-        if use_cached_video_files:
-            generate_video = False
-        else:
-            file_name.unlink()  # deletes a previous version
+    generate_video = unlink_if_exists_and_not_using_as_cached(file_name, use_cached_video_files)
 
     backend_cls = get_backend(backend)
 
     # Process the video(s)
     stream_videos = None
     total_duration = 0
-    for video_id, video_info in enumerate(question[kind+"_video"]):
-        ppq.io.log("Processing video input {:d}/{:d}".format(video_id + 1, len(question[kind+"_video"])))
+    for video_id, video_info in enumerate(question[kind + "_video"]):
+        ppq.io.log("Processing video input {:d}/{:d}".format(video_id + 1, len(question[kind + "_video"])))
+
         interval = ppq.io.get_interval_in_s(video_info["interval"])
         total_duration += get_interval_length(interval)
         reverse = video_info.get("reverse", False)
         answer_label_events = video_info.get("answer_label_events", [])
+        crossfade_duration = video_info.get("crossfade_duration", 0)
+
         stream_video = backend_cls(video_files[video_id], has_video=True, has_audio=False, width=width, height=height)
-        stream_video = filter_stream_video(stream_video, kind, interval, answer_texts[video_id],
+
+        # Use modulo-answer texts here, to catch the cases where there is 1 answer, while the
+        # answer video is built from 2 (concatenated) clips
+        stream_video = filter_stream_video(stream_video, kind, interval, answer_texts[video_id % len(answer_texts)],
                                            reverse, answer_label_events=answer_label_events)
+
         if stream_videos is None:
             stream_videos = stream_video
         else:
-            stream_videos.combine(stream_video)
+            stream_videos.combine(stream_video, crossfade_duration=crossfade_duration)
+
     ppq.io.log("Processing final video")
     assert stream_videos is not None
     stream_videos = filter_stream_videos(stream_videos, kind, round_id, question_id, repetitions,
@@ -172,20 +196,25 @@ def create_video(kind: str, round_id: int, question: Dict, question_id: int, out
 
     # Process the audio(s)
     stream_audios = None
-    for audio_id, audio_info in enumerate(question[kind+"_audio"]):
-        ppq.io.log("Processing audio input {:d}/{:d}".format(audio_id + 1, len(question[kind+"_audio"])))
+    for audio_id, audio_info in enumerate(question[kind + "_audio"]):
+        ppq.io.log("Processing audio input {:d}/{:d}".format(audio_id + 1, len(question[kind + "_audio"])))
+
         interval = ppq.io.get_interval_in_s(audio_info["interval"])
         reverse = audio_info.get("reverse", False)
         beep_events = audio_info.get("beeps_events", [])
+        crossfade_duration = audio_info.get("crossfade_duration", 0)
+
         stream_audio = backend_cls(audio_files[audio_id], has_video=False, has_audio=True, width=width, height=height)
         stream_audio = filter_stream_audio(stream_audio, interval, reverse, beep_events=beep_events)
+
         if stream_audios is None:
             stream_audios = stream_audio
         else:
-            stream_audios.combine(stream_audio)
+            stream_audios.combine(stream_audio, crossfade_duration=crossfade_duration)
+
     ppq.io.log("Processing final audio")
     assert stream_audios is not None
-    stream_audio = filter_stream_audios(stream_audios, kind, repetitions, spacer_txt=spacer_txt)
+    stream_audio = filter_stream_audios(stream_audios, kind, repetitions, spacer_txt=spacer_txt, is_example=is_example)
 
     # Combine the audio and video
     stream_videos.add_audio(stream_audio)
@@ -210,16 +239,23 @@ def combine_videos(video_files: List[Path], kind: str, round_id: int, output_dir
 
 
 def create_text_video(file_name: Path, source_texts: List[str], duration: int,
-                      width: int, height: int, backend: str = 'ffmpeg') -> Path:
+                      width: int, height: int, use_cached_video_files: bool = False,
+                      backend: str = 'ffmpeg') -> Path:
     """Generates a video with text on a black background"""
     backend_cls = get_backend(backend)
     stream = backend_cls.create_empty_stream(duration, width=width, height=height)
     num_texts = len(source_texts)
     for text_id, source_text in enumerate(source_texts):
         stream.draw_text(source_text, 0.5 - 0.1 * num_texts + 0.2 * text_id)
+
+    stream.fade_in_and_out(1, duration)
+
     audio = backend_cls.create_silent_stream(duration, width=width, height=height)
     stream.add_audio(audio)
-    file_name_out = stream.run(file_name)
+
+    generate_video = unlink_if_exists_and_not_using_as_cached(file_name, use_cached_video_files)
+
+    file_name_out = stream.run(file_name, dry_run=not generate_video)
     return file_name_out
 
 

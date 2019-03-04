@@ -1,5 +1,6 @@
 """Moviepy backend for video editing"""
 
+import math
 from pathlib import Path
 import typing
 from typing import Callable, List, Optional, Tuple, Union
@@ -11,6 +12,7 @@ import moviepy.editor as med  # pylint: disable=no-name-in-module,import-error
 from moviepy.decorators import audio_video_fx  # pylint: disable=import-error,no-name-in-module
 from moviepy.editor import afx  # pylint: disable=import-error
 from moviepy.editor import vfx  # pylint: disable=import-error
+from moviepy.editor import transfx  # pylint: disable=import-error
 
 import pypopquiz as ppq
 import pypopquiz.backends.backend
@@ -46,7 +48,7 @@ def tone_in_interval(clip: med.AudioClip, interval: Tuple[float, float], freq_hz
             return original
 
         # t is an array of timestamps:
-        selector = np.logical_and(interval[0] < t, interval[1] > t)
+        selector = np.logical_and(interval[0] < t, interval[1] > t)  # pylint: disable=assignment-from-no-return
         t_offset = t - interval[0]
         tone = np.array(np.sin(freq_hz * np.pi * t_offset))
 
@@ -58,7 +60,7 @@ def tone_in_interval(clip: med.AudioClip, interval: Tuple[float, float], freq_hz
 
 class Moviepy(pypopquiz.backends.backend.Backend):
     """Moviepy backend."""
-    DEFAULT_FPS = 30
+    DEFAULT_FPS = 25
 
     def __init__(self, source_file: Path, has_video: bool, has_audio: bool,
                  width: int, height: int, duration: Optional[float] = None) -> None:
@@ -69,6 +71,7 @@ class Moviepy(pypopquiz.backends.backend.Backend):
         self.reader_refs = []  # type: List[moviepy.clip.Clip]
 
         audio_input_file = source_file.suffix in ('.mp3', '.wav',)
+        image_input_file = source_file.suffix in ('.png', '.jpg')
         if has_video:
             if audio_input_file:
                 # Create a black clip with the audio file pasted on top
@@ -77,25 +80,36 @@ class Moviepy(pypopquiz.backends.backend.Backend):
 
                 self.clip = self.create_color_clip((width, height), (0, 0, 0), audio.duration)
                 self.clip = self.clip.set_audio(audio)
+            elif image_input_file:
+                duration = typing.cast(float, duration)
+                self.clip = med.ImageClip(str(source_file), duration=duration)
             else:
                 # Assume video otherwise
                 self.clip = med.VideoFileClip(str(source_file), audio=has_audio)
+                self.clip.set_fps(Moviepy.DEFAULT_FPS)
+
                 self.reader_refs.append(self.clip)
 
         elif has_audio:
             # Work only on audio from here on out
-            if audio_input_file:
+            if source_file.is_file():
+                # Extract audio stream from file (even if it is a video file)
                 self.clip = med.AudioFileClip(str(source_file))
                 self.reader_refs.append(self.clip)
             else:
-                self.clip = med.AudioClip(silence, duration=duration)
-                self.reader_refs.append(self.clip)
+                # A black clip w/o audio
+                duration = typing.cast(float, duration)
+                self.clip = self.create_color_clip((width, height), (0, 0, 0), duration)
         else:
             # Blank video
             assert duration is not None
             duration = typing.cast(float, duration)
             self.clip = self.create_color_clip((width, height), (0, 0, 0), duration)
             self.has_video = True
+
+        # Workaround moviepy issues: Occasionally, clips gain fractional seconds of duration
+        # due to rounding errors. Flooring them back keeps things reasonably sane most of the time.
+        self.clip = self.clip.set_duration(math.floor(self.clip.duration))
 
     @classmethod
     def create_empty_stream(cls, duration: int, width: int, height: int) -> 'Moviepy':
@@ -108,6 +122,15 @@ class Moviepy(pypopquiz.backends.backend.Backend):
         """Creates audio of a certain duration with no sound"""
         return cls(source_file=Path(''), has_video=False, has_audio=True, width=width, height=height,
                    duration=duration)
+
+    @classmethod
+    def create_single_image_stream(cls, input_image: Path, duration: int,
+                                   width: int, height: int) -> 'Moviepy':
+        """Creates a video of a certain duration with a single still image"""
+        stream = cls(Path(input_image), has_video=True, has_audio=False, width=width, height=height,
+                     duration=duration)
+        stream.scale_video()
+        return stream
 
     @staticmethod
     def create_color_clip(size: Tuple[int, int], color: Tuple[int, int, int], duration: float) -> med.ColorClip:
@@ -128,28 +151,50 @@ class Moviepy(pypopquiz.backends.backend.Backend):
         else:
             self.clip = med.concatenate_audioclips([self.clip, self.clip])
 
-    def combine(self, other: 'Moviepy', other_first: bool = False) -> None:  # type: ignore
+    def combine(self, other: 'Moviepy', other_first: bool = False,  # type: ignore
+                crossfade_duration: float = 0) -> None:
         """Combines this video stream with another stream"""
         self.reader_refs += other.reader_refs
         clips = [other.clip, self.clip] if other_first else [self.clip, other.clip]
 
         if self.has_video and other.has_video:
-            self.clip = med.concatenate_videoclips(clips)
+            if crossfade_duration == 0:
+                self.clip = med.concatenate_videoclips(clips)
+            else:
+                # Have clips[1] start while clips[0] is not finished yet
+                clips[1] = clips[1].set_start(max(0, clips[0].duration - crossfade_duration))
+                clips[1] = clips[1].fx(transfx.crossfadein, crossfade_duration)
+                self.clip = med.CompositeVideoClip([clips[0], clips[1]])
+                # TODO: consider calling set_duration?
+                self.clip.duration = clips[0].duration + clips[1].duration - crossfade_duration
         else:
-            assert self.has_video is False and other.has_video is False
-            self.clip = med.concatenate_audioclips(clips)
+            if crossfade_duration == 0:
+                assert self.has_video is False and other.has_video is False
+                self.clip = med.concatenate_audioclips(clips)
+            else:
+                # Audio crossfade in: start earlier, fade in with normal audio_fadein effect.
+                clips[1] = clips[1].set_start(max(0, clips[0].duration - crossfade_duration))
+                clips[1] = clips[1].fx(afx.audio_fadein, crossfade_duration)
+                self.clip = med.CompositeAudioClip([clips[0], clips[1]])
+                self.clip.duration = clips[0].duration + clips[1].duration - crossfade_duration
 
-    def fade_in_and_out(self, duration_s: int, video_length_s: int) -> None:
+    def fade_in_and_out(self, duration_s: int, video_length_s: int, fade_in: bool = True,
+                        fade_out: bool = True) -> None:
         """Adds a fade-in and fade-out to/from black for the audio and video stream"""
         if self.has_video:
+            if fade_in:
+                self.clip = self.clip.fx(vfx.fadein, duration_s).\
+                    fx(afx.audio_fadein, duration_s)
 
-            self.clip = self.clip.fx(vfx.fadein, duration_s).\
-                fx(vfx.fadeout, duration_s).\
-                fx(afx.audio_fadein, duration_s).\
-                fx(afx.audio_fadeout, duration_s)
+            if fade_out:
+                self.clip = self.clip.fx(vfx.fadeout, duration_s).\
+                    fx(afx.audio_fadeout, duration_s)
         else:
-            self.clip = self.clip.fx(afx.audio_fadein, duration_s).\
-                fx(afx.audio_fadeout, duration_s)
+            if fade_in:
+                self.clip = self.clip.fx(afx.audio_fadein, duration_s)
+
+            if fade_out:
+                self.clip = self.clip.fx(afx.audio_fadeout, duration_s)
 
     @staticmethod
     def get_scaled_size(w_in: int, h_in: int, max_w_out: int, max_h_out: int) -> Tuple[int, int]:
@@ -184,13 +229,15 @@ class Moviepy(pypopquiz.backends.backend.Backend):
         duration = self.clip.duration
         clips = [self.create_color_clip((self.width, self.height), (0, 0, 0), duration), scaled_clip]
         self.clip = med.CompositeVideoClip(clips)
-        self.clip.duration = duration
+        self.clip = self.clip.set_duration(duration)
 
-    def draw_text(self, video_text: str, height_fraction: float) -> None:
+    def draw_text(self, video_text: str, height_fraction: float,
+                  interval: Optional[Tuple[float, float]] = None) -> None:
         """Draws text in the center of the video at a certain height fraction"""
         assert self.has_video
         duration_s = 0  # Don't care, uses interval
-        interval = (0, self.clip.duration)
+        if interval is None:
+            interval = (0, self.clip.duration)
         self.clip = Moviepy.draw_text_in_box_on_video(
             self.clip, video_text, duration_s, self.width, self.height, box_height=self.get_box_height(),
             move=False, top=False, on_box=False, center=True, vpos=height_fraction,
@@ -202,7 +249,8 @@ class Moviepy(pypopquiz.backends.backend.Backend):
         """Draws a semi-transparent box either at the top or bottom and writes text in it, optionally scrolling by"""
         assert self.has_video
         self.clip = Moviepy.draw_text_in_box_on_video(
-            self.clip, video_text, length, self.width, self.height, self.get_box_height(), move, top
+            self.clip, video_text, length, self.width, self.height, self.get_box_height(),
+            move, top, fontsize=self.get_font_size()
         )
 
     @staticmethod
@@ -213,7 +261,7 @@ class Moviepy(pypopquiz.backends.backend.Backend):
                                   interval: Optional[Tuple[float, float]] = None,
                                   fontsize=30) -> med.CompositeVideoClip:
         """Draws a semi-transparent box either at the top or bottom and writes text in it, optionally scrolling by"""
-        clips = [video]
+        clips = []
 
         y_location = 0 if top else height - box_height
         y_location = height // 2 if center else y_location
@@ -225,17 +273,21 @@ class Moviepy(pypopquiz.backends.backend.Backend):
 
         if on_box:
             color_clip = med.ColorClip(size=(video_w, box_height), color=(0, 0, 0))
-            color_clip = color_clip.set_opacity(0.6)  # pylint: disable=assignment-from-no-return
+            color_clip = color_clip.set_fps(Moviepy.DEFAULT_FPS)  # pylint: disable=assignment-from-no-return
+
+            color_clip = color_clip.set_opacity(0.5)  # pylint: disable=assignment-from-no-return
             color_clip = color_clip.set_position(pos=(0, y_location))
             clips.append(color_clip)
 
-        txt = med.TextClip(video_text, font='Arial', color='white', fontsize=fontsize)
+        stroke_color = 'black' if not on_box else None
+        txt = med.TextClip(video_text, font='Bauhaus-93', color='white', stroke_color=stroke_color, fontsize=fontsize)
+
         txt_y_location = (box_height - txt.h) // 2 + y_location
 
         if center:
             txt_left_margin = (width - txt.w) // 2
         else:
-            txt_left_margin = 50
+            txt_left_margin = 20
 
         # pylint: disable=assignment-from-no-return
         if move:
@@ -244,6 +296,7 @@ class Moviepy(pypopquiz.backends.backend.Backend):
         else:
             txt_mov = txt.set_position((txt_left_margin, txt_y_location))
         # pylint: enable=assignment-from-no-return
+        txt_mov = txt_mov.set_fps(Moviepy.DEFAULT_FPS)  # pylint: disable=assignment-from-no-return
 
         if interval:
             # Fade text in and out
@@ -257,18 +310,14 @@ class Moviepy(pypopquiz.backends.backend.Backend):
         clips.append(txt_mov)
 
         duration = video.duration
-        video = med.CompositeVideoClip(clips, use_bgclip=interval is not None)
+        # Add the input video as the first in the list
+        clips = [video] + clips
+
+        # Build a new composition out of the original clip and the text overlay.
+        # video = med.CompositeVideoClip(clips, use_bgclip=interval is not None)
+        video = med.CompositeVideoClip(clips)
         video.duration = duration
         return video
-
-    def overlay_fading_text(self, text: str, interval: Tuple[float, float]):
-        """Overlay fading text on the clip."""
-        assert self.has_video
-        duration_s = 0  # Don't care
-        self.clip = Moviepy.draw_text_in_box_on_video(
-            self.clip, text, duration_s, self.width, self.height, box_height=self.get_box_height(),
-            move=False, top=False, on_box=False, center=True, interval=interval, fontsize=self.get_font_size()
-        )
 
     def add_spacer(self, text: str, duration_s: float) -> None:
         """Add a text spacer to the start of the clip."""
@@ -334,7 +383,7 @@ class Moviepy(pypopquiz.backends.backend.Backend):
 
         if not dry_run:
             with Moviepy.tmp_intermediate_file(file_name_out) as tmp_out:
-                self.clip.write_videofile(str(tmp_out), threads=2)
+                self.clip.write_videofile(str(tmp_out), threads=2)  # write_logfile=True
 
         # Close the file reader (typically terminates an ffmpeg process)
         self.close_readers()
