@@ -1,0 +1,41 @@
+{
+  "round": 13,
+  "theme": "Cover test",
+  "questioned": ["artist", "title"],
+  "use_cached_video_files": false,
+  "questions": [
+    {
+      "repetitions": 1,
+      "answers": [{"artist": "Cover by Faith No More", "title": "Easy"}],
+      "sources": [
+        {"source": "youtube", "identifier": "vPzDTfIb0DU", "format": "mp4"},
+        {"source": "youtube", "identifier": "3DSVMDmzCcA", "format": "mp4"}
+      ],
+      "question_video": [
+        {"source": 0, "interval": ["0:15", "0:46"]}
+      ],
+      "question_audio": [
+        {"source": 0}
+      ],
+      "answer_video": [
+        {"source": 0, "interval": ["0:49", "1:03"]},
+        {
+          "source": 1,
+          "interval": ["1:05", "1:21"],
+          "crossfade_duration": 3,
+          "answer_label_events": [
+            {
+              "interval": ["1:11", "1:18"],
+              "answer": "Original artist: Commodores"
+            }
+          ]
+        }
+      ],
+      "answer_audio": [
+        {"source": 0},
+        {"source": 1, "crossfade_duration": 3}
+      ]
+    } 
+  ]
+}
+
