@@ -336,6 +336,11 @@ class Moviepy(pypopquiz.backends.backend.Backend):
         silence_clip = med.AudioClip(silence, duration=duration_s)
         self.clip = med.concatenate_audioclips([silence_clip, self.clip])
 
+    def normalize_audio(self) -> None:
+        """Normalizes audio volume"""
+        assert self.has_audio
+        # TODO: Implement
+
     def reverse(self) -> None:
         """Reverses an entire audio or video clip."""
         duration = self.clip.duration

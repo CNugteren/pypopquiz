@@ -89,6 +89,10 @@ class Backend(abc.ABC):
         """Add a silence of a certain duration the an audio clip."""
 
     @abc.abstractmethod
+    def normalize_audio(self) -> None:
+        """Normalizes audio volume"""
+
+    @abc.abstractmethod
     def reverse(self) -> None:
         """Reverses an entire audio or video clip."""
 
