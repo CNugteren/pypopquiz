@@ -91,7 +91,6 @@ class Backend(abc.ABC):
     @abc.abstractmethod
     def normalize_audio(self) -> None:
         """Normalizes audio volume"""
-        pass
 
     @abc.abstractmethod
     def reverse(self) -> None:
