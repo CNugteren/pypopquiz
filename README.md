@@ -2,7 +2,9 @@
 
 [![Build Status](https://travis-ci.org/CNugteren/pypopquiz.svg?branch=master)](https://travis-ci.org/CNugteren/pypopquiz/branches)
 
-PyPopQuiz is still under development, head back soon if you are looking for a fully working tool. If you are a developer, you can already start testing the tool. You can install it using `pip install -e .` and then run the tool, e.g.:
+PyPopQuiz is a python package to generate popquiz-videos (questions and answers) based simple JSON files with descriptions of the quiz-questions. Such a JSON description could for example contain a song's title and answer which need to be guessed, along with a YouTube-link and two time-intervals defined for the audio and/or video question and answer. It includes features such as only audio, only video, combined audio and video, local files, YouTube links, reversed audio, text overlays, missing words rounds, and so on.
+
+You can install it using `pip install -e .` and then run the tool, e.g.:
 
     popquiz.py -i samples/round01.json -o output_folder
 
