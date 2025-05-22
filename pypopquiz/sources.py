@@ -2,9 +2,8 @@
 
 from pathlib import Path
 from typing import Dict, Any
-import subprocess
 
-from pytube import YouTube
+import yt_dlp
 
 import pypopquiz as ppq
 import pypopquiz.io
@@ -16,29 +15,18 @@ def to_youtube_url(video_identifier: str) -> str:
     return "https://www.youtube.com/watch?v={:s}".format(video_identifier)
 
 
-def download_with_pytube(sources_dir: Path, source_url: str, source_format: str) -> None:
-    """Download video from youtube with pytube."""
-    video = YouTube(to_youtube_url(source_url))
-    video = video.streams.filter(subtype=source_format).first()
-    video.download(output_path=str(sources_dir), filename=source_url)
-
-
-def download_with_youtube_dl(sources_dir: Path, source_url: str, source_format: str) -> None:
-    """Download video from youtube with youtube-dl."""
-    output_tpl = str(sources_dir) + "/%(id)s.%(ext)s"
-    dl_failed = False
-    try:
-        subprocess.run(['youtube-dl', to_youtube_url(source_url), "-f", source_format, "-o", output_tpl])
-    except FileNotFoundError:
-        dl_failed = True
-
-    if dl_failed:
-        raise RuntimeError('Calling youtube-dl failed. Make sure it is installed and available'
-                           ' in the path, or use the default pytube downloader instead.')
+def download_with_yt_dlp(sources_dir: Path, source_url: str, source_format: str) -> None:
+    """Download video from YouTube with yt-dlp."""
+    ydl_opts = {
+        "format": source_format,
+        "outtmpl": str(sources_dir) + '/%(id)s.%(ext)s',
+    }
+    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+        ydl.download([source_url])
 
 
 def get_source(source_data: Dict[str, Any], output_dir: Path, input_dir: Path, width: int, height: int,
-               backend: str = 'ffmpeg', downloader: str = 'pytube') -> None:
+               backend: str = 'ffmpeg', downloader: str = 'yt-dlp') -> None:
     """Retrieves a source and stores is in a local output directory, skips if already there"""
     if not output_dir.exists():
         output_dir.mkdir()
@@ -59,10 +47,8 @@ def get_source(source_data: Dict[str, Any], output_dir: Path, input_dir: Path, w
     if source_type == "youtube":
         ppq.io.log("Downloading video '{:s}' from Youtube...".format(source_url))
 
-        if downloader == 'pytube':
-            download_with_pytube(sources_dir, source_url, source_format)
-        elif downloader == 'youtube-dl':
-            download_with_youtube_dl(sources_dir, source_url, source_format)
+        if downloader == 'yt-dlp':
+            download_with_yt_dlp(sources_dir, source_url, source_format)
         else:
             raise ValueError("Invalid downloader selected.")
 

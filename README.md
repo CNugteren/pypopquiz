@@ -12,7 +12,7 @@ To use the moviepy backend, add `-b moviepy` to the command line.
 
 ## Requirements
 
-Tested on Linux and Windows. Requires Python 3.5 or newer. Requires ffmpeg and the Python packages `pytube` and `ffmpeg-python` or `moviepy`, installed as part of the requirements.
+Tested on Linux and Windows. Requires Python 3.5 or newer. Requires ffmpeg and the Python packages `yt-dlp` and `ffmpeg-python` or `moviepy`, installed as part of the requirements.
 
 ### Moviepy
 

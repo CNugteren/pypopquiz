@@ -7,7 +7,7 @@ setup(
     url="https://github.com/CNugteren/pypopquiz",
     description="Python tool to create pop-quiz videos programmatically",
     license="MIT",
-    install_requires=["ffmpeg-python", "pytube", "jsonschema", "moviepy==1.0.3", "requests"],
+    install_requires=["ffmpeg-python", "yt-dlp", "jsonschema", "moviepy==1.0.3", "requests"],
     scripts=["pypopquiz/popquiz.py"],
     packages=find_packages(),
     package_data={'': ['*.png']},

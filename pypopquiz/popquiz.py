@@ -18,14 +18,12 @@ def parse_arguments():
     parser.add_argument("-o", "--output_dir", required=True, help="Output dir with popquiz data", type=Path)
     parser.add_argument("-b", "--backend", required=False, help="Backend selection (ffmpeg or moviepy)",
                         type=str, default='ffmpeg')
-    parser.add_argument("-d", "--downloader", required=False, help="Downloader selection (pytube or youtube-dl)",
-                        type=str, default='pytube')
     parser.add_argument("--width", required=False, help="Video width", type=int, default=1280)
     parser.add_argument("--height", required=False, help="Video height", type=int, default=720)
     return vars(parser.parse_args())
 
 
-def popquiz(input_file: Path, output_dir: Path, backend: str, downloader: str, width: int, height: int,
+def popquiz(input_file: Path, output_dir: Path, backend: str, width: int, height: int,
             title_text_duration_s: int = 10) -> None:
     """The main routine, constructing the entire popquiz output"""
 
@@ -45,7 +43,7 @@ def popquiz(input_file: Path, output_dir: Path, backend: str, downloader: str, w
     for question in input_data["questions"]:
         for source in question["sources"]:
             ppq.sources.get_source(source, output_dir, input_file.parent, width=width, height=height,
-                                   backend=backend, downloader=downloader)
+                                   backend=backend, downloader="yt-dlp")
 
     theme = '"{:s}"'.format(input_data["theme"])
     q_title = ppq.video.create_text_video(round_dir / ("{:02d}_questions_title.mp4".format(round_id)),
