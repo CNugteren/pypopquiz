@@ -1,3 +1,4 @@
+#!python
 """Main entry point for the pypopquiz package"""
 
 import argparse
