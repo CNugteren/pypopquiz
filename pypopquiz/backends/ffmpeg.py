@@ -92,7 +92,7 @@ class FFMpeg(ppq.backends.backend.Backend):
         box_height = self.get_box_height()
         y_location = 0 if top else height - box_height
 
-        thickness = "fill" if self.version.startswith("N") else "max"  # Assume nightlies are new.
+        thickness = "fill"  # this used to be 'max' in older versions (pre ~2019)
         stream_v = self.stream_v.drawbox(x=0, y=y_location, width=width, height=box_height, color="gray@0.5",
                                          thickness=thickness)
         x_location_text = "{:d} * t / {:d}".format(width, length) if move else "{:d} - text_w / 2".format(width // 2)
